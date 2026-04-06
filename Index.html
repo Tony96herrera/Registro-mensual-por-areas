@@ -236,6 +236,21 @@ const save=()=>localStorage.setItem('omni_records',JSON.stringify(records));
 const saveWeeks=()=>localStorage.setItem('omni_weeks',JSON.stringify(weekState));
 const weekKey=()=>`${aArea}__${aMes}__${aAnio}`;
 function getWeeks(){return weekState[weekKey()]||[];}
+
+// Rebuild weekState from all records so existing weeks always appear
+function syncWeeksFromRecords(){
+  records.forEach(r=>{
+    if(!r.area||!r.mes||!r.anio||!r.semana) return;
+    const k=`${r.area}__${r.mes}__${r.anio}`;
+    if(!weekState[k]) weekState[k]=[];
+    if(!weekState[k].includes(r.semana)) weekState[k].push(r.semana);
+  });
+  // sort each key's weeks numerically
+  Object.keys(weekState).forEach(k=>{
+    weekState[k]=weekState[k].slice().sort((a,b)=>a-b);
+  });
+  saveWeeks();
+}
 function addWeek(){
   const key=weekKey();
   const cur=weekState[key]||[];
@@ -253,7 +268,7 @@ function removeWeek(w){
   saveWeeks();renderAll();toast(`Semana ${w} eliminada`,'success');
 }
 
-async function fbLoad(){if(!window._fe)return;try{const{collection,getDocs,query,orderBy}=window._ff;const q=query(collection(window._db,'actividades'),orderBy('createdAt','desc'));const s=await getDocs(q);records=[];s.forEach(d=>records.push({id:d.id,...d.data()}));save();const c=document.getElementById('fbChip');c.innerHTML='<div class="dot"></div>Firebase ✓';c.classList.add('on');renderAll();}catch(e){}}
+async function fbLoad(){if(!window._fe)return;try{const{collection,getDocs,query,orderBy}=window._ff;const q=query(collection(window._db,'actividades'),orderBy('createdAt','desc'));const s=await getDocs(q);records=[];s.forEach(d=>records.push({id:d.id,...d.data()}));save();syncWeeksFromRecords();const c=document.getElementById('fbChip');c.innerHTML='<div class="dot"></div>Firebase ✓';c.classList.add('on');renderAll();}catch(e){}}
 async function fbAdd(d){if(!window._fe)return null;try{const{collection,addDoc}=window._ff;const r=await addDoc(collection(window._db,'actividades'),{...d,createdAt:new Date().toISOString()});return r.id;}catch(e){return null;}}
 async function fbUp(id,d){if(!window._fe||!id)return;try{const{doc,updateDoc}=window._ff;await updateDoc(doc(window._db,'actividades',id),d);}catch(e){}}
 async function fbDel(id){if(!window._fe||!id)return;try{const{doc,deleteDoc}=window._ff;await deleteDoc(doc(window._db,'actividades',id));}catch(e){}}
@@ -454,6 +469,7 @@ function toggleTheme(){
 window.addEventListener('load',()=>{
   aMes=MONTHS[new Date().getMonth()];
   aAnio=new Date().getFullYear();
+  syncWeeksFromRecords();
   applyTheme();
   renderAll();
   setTimeout(()=>{if(window._fe)fbLoad();},400);
