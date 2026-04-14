@@ -35,13 +35,13 @@ body.light{--bg:#f0f0f0;--s1:#ffffff;--s2:#f5f5f5;--s3:#e8e8e8;--b1:#d8d8d8;--b2
 *{transition:background-color .25s,border-color .25s,color .2s}
 *{box-sizing:border-box;margin:0;padding:0}html,body{height:100%}
 body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--t1);font-size:14px;display:flex;flex-direction:column;height:100vh;overflow:hidden}
-header{background:var(--s1);border-bottom:1px solid var(--b1);padding:0 28px;height:56px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+header{background:var(--s1);border-bottom:1px solid var(--b1);padding:0 28px;height:56px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;gap:12px}
 .logo{font-family:'Syne',sans-serif;font-weight:800;font-size:16px;display:flex;align-items:center;gap:9px}
 .pip{width:8px;height:8px;border-radius:50%;background:var(--ac);animation:blink 2.5s infinite}
 @keyframes blink{0%,100%{opacity:1}50%{opacity:.25}}
 .chip{font-size:11px;padding:3px 10px;border-radius:20px;border:1px solid var(--b2);color:var(--t3);display:flex;align-items:center;gap:5px}
 .chip.on{border-color:var(--ac);color:var(--ac)}.chip .dot{width:5px;height:5px;border-radius:50%;background:currentColor}
-.hdr-r{display:flex;align-items:center;gap:10px}
+.hdr-r{display:flex;align-items:center;gap:10px;flex-shrink:0}
 .shell{display:flex;flex:1;overflow:hidden}
 nav{width:220px;background:var(--s1);border-right:1px solid var(--b1);display:flex;flex-direction:column;flex-shrink:0;overflow-y:auto;padding-bottom:24px}
 .ns{padding:20px 14px 0}.nl{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.4px;color:var(--t3);margin-bottom:8px;padding:0 4px}
@@ -147,7 +147,11 @@ body.light #toast.error{border-color:var(--er)}
   </div>
   <div class="hdr-r">
     <div class="chip" id="fbChip"><div class="dot"></div>Local</div>
-    <button class="btn bghost bsm" onclick="exportExcel()">
+    <a href="minutas.html" class="btn bghost bsm" style="text-decoration:none;flex-shrink:0">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+      Minutas
+    </a>
+    <button class="btn bghost bsm" onclick="exportExcel()" style="flex-shrink:0">
       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
       Exportar Excel
     </button>
