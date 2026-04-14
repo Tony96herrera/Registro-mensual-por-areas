@@ -23682,15 +23682,14 @@ async function handleFile(file){
   dz.classList.add('over');
 
   try{
-    // 1. Extract raw text from docx
     const buf=await file.arrayBuffer();
     const rawText=await extractTextFromDocx(new Uint8Array(buf));
-    if(!rawText||rawText.length<10) throw new Error('El documento parece estar vacío o no se pudo leer');
+    if(!rawText||rawText.length<20) throw new Error('No se pudo leer el documento');
+
+    console.log('Texto extraído:\n', rawText.substring(0,500));
 
     dzFile.textContent='🤖 Analizando con Gemini AI...';
-    console.log('=== TEXTO ENVIADO A GEMINI ===\n', rawText.substring(0,3000));
 
-    // 2. Use Gemini (skip if file:// protocol — browsers block external fetch)
     let parsed;
     let usedGemini=false;
     const isLocal=location.protocol==='file:';
@@ -23699,13 +23698,12 @@ async function handleFile(file){
       parsed=await parseWithGemini(rawText, GEMINI_API_KEY);
       usedGemini=true;
     }catch(geminiErr){
-      console.warn('Gemini falló, usando extracción básica:',geminiErr.message);
+      console.warn('Gemini falló:', geminiErr.message);
       dzFile.textContent='📄 Extrayendo contenido...';
       await new Promise(r=>setTimeout(r,300));
       parsed=parseWithRegex(rawText);
     }
 
-    // 3. Show step 2
     dzFile.textContent='';
     dz.classList.remove('over');
     dz.classList.add('has-file');
@@ -23716,7 +23714,6 @@ async function handleFile(file){
     document.getElementById('impFecha').value=parsed.fecha||today();
     document.getElementById('impPart').value=parsed.participantes||'';
 
-    // Final safety: remove any area whose name matches a participant name/word
     const partWords=new Set(
       (parsed.participantes||'').split(/[,\s]+/).map(w=>w.trim().toUpperCase()).filter(w=>w.length>1)
     );
@@ -23725,7 +23722,7 @@ async function handleFile(file){
       if(!nm) return false;
       if(partWords.has(nm)) return false;
       const words=nm.split(/\s+/);
-      if(words.length<=2 && words.every(w=>partWords.has(w))) return false;
+      if(words.length<=2&&words.every(w=>partWords.has(w))) return false;
       if(!a.puntos||!a.puntos.filter(p=>p&&p.trim().length>3).length) return false;
       return true;
     });
@@ -23746,64 +23743,42 @@ async function handleFile(file){
   }
 }
 
-// ── EXTRACT RAW TEXT FROM DOCX (ZIP+XML) ──
+
 async function extractTextFromDocx(uint8){
-  const xml=await extractFileFromZip(uint8,'word/document.xml');
-  if(!xml) return '';
+  const xmlRaw = await extractFileFromZip(uint8, 'word/document.xml');
+  if(!xmlRaw) return '';
 
-  // Parse XML - try both namespace-aware and fallback
-  const parser=new DOMParser();
-  const doc2=parser.parseFromString(xml,'application/xml');
+  // Parse paragraphs using regex on raw XML — avoids namespace issues in browsers
+  const lines = [];
 
-  // Helper: get attribute trying both namespaced and prefixed forms
-  const wa=(el,attr)=>{
-    if(!el) return '';
-    const NS='http://schemas.openxmlformats.org/wordprocessingml/2006/main';
-    return el.getAttributeNS(NS,attr)||el.getAttribute('w:'+attr)||'';
-  };
+  // Split into paragraph blocks
+  const pBlocks = xmlRaw.split(/<w:p[ >\/]/);
 
-  // Get all paragraph elements - try namespace then fallback
-  const NS='http://schemas.openxmlformats.org/wordprocessingml/2006/main';
-  let paras=[...doc2.getElementsByTagNameNS(NS,'p')];
-  if(!paras.length) paras=[...doc2.querySelectorAll('p')];
+  for(const block of pBlocks){
+    // Extract all text runs
+    const tMatches = [...block.matchAll(/<w:t[^>]*>([^<]*)<\/w:t>/g)];
+    const text = tMatches.map(m => m[1]).join('').trim();
+    if(!text) continue;
 
-  const getChildren=(el,tag)=>{
-    const r=[...el.getElementsByTagNameNS(NS,tag)];
-    return r.length?r:[...el.querySelectorAll(tag)];
-  };
+    // Detect ilvl (list level)
+    const ilvlMatch = block.match(/<w:ilvl w:val="(\d+)"/);
+    const ilvl = ilvlMatch ? parseInt(ilvlMatch[1]) : null;
 
-  const lines=paras.map(p=>{
-    // Get text
-    const tEls=getChildren(p,'t');
-    const text=tEls.map(t=>t.textContent).join('').trim();
-    if(!text) return null;
-
-    // Get numPr > ilvl
-    const numPrs=getChildren(p,'numPr');
-    const numPr=numPrs.length?numPrs[0]:null;
-    let ilvl=null;
-    if(numPr){
-      const ilvlEls=getChildren(numPr,'ilvl');
-      if(ilvlEls.length) ilvl=parseInt(wa(ilvlEls[0],'val')||'0');
-    }
-
-    // Get ind left from pPr
-    const pPrs=getChildren(p,'pPr');
-    const pPr=pPrs.length?pPrs[0]:null;
-    let indLeft=0;
-    if(pPr){
-      const indEls=getChildren(pPr,'ind');
-      if(indEls.length) indLeft=parseInt(wa(indEls[0],'left')||'0');
-    }
+    // Detect indent
+    const indMatch = block.match(/<w:ind[^>]*w:left="(\d+)"/);
+    const indLeft = indMatch ? parseInt(indMatch[1]) : 0;
 
     // Classify
-    if(ilvl===null&&(indLeft>=700||(text.length<60&&/^\d+\.\s/.test(text)))){
-      return '\n### '+text; // Area heading
+    if(ilvl === null && (indLeft >= 700 || (/^\d+\.\s/.test(text) && text.length < 60))){
+      lines.push('\n### ' + text);
+    } else if(ilvl !== null && ilvl >= 1){
+      lines.push('  > ' + text);
+    } else if(ilvl === 0){
+      lines.push('- ' + text);
+    } else {
+      lines.push(text);
     }
-    if(ilvl!==null&&ilvl>=1) return '  > '+text; // Sub-point
-    if(ilvl===0) return '- '+text; // Main bullet
-    return text; // Plain text
-  }).filter(l=>l!==null);
+  }
 
   return lines.join('\n');
 }
@@ -23844,10 +23819,9 @@ async function parseWithGemini(rawText, apiKey){
   const prompt=`Eres un asistente experto en minutas de reuniones de empresa.
 
 El texto tiene este formato estructurado:
-- "### N. Nombre" → título de ÁREA (ej: "### 1. Almacén", "### 6. Atención")
-- "- texto" → punto principal del área
-- "  > texto" → sub-punto que pertenece al punto principal inmediatamente anterior (línea "- " de arriba)
-- Texto sin prefijo → información general (fecha, participantes, etc.)
+- Líneas "### N. Nombre" = título de ÁREA
+- Líneas "- texto" = punto principal
+- Líneas "  > texto" = sub-punto del punto principal anterior
 
 Devuelve ÚNICAMENTE este JSON:
 {
@@ -23859,80 +23833,44 @@ Devuelve ÚNICAMENTE este JSON:
 }
 
 REGLAS:
-
-1. "fecha": fecha de la reunión en YYYY-MM-DD. Año por defecto ${new Date().getFullYear()}.
-
-2. "participantes": solo nombres de asistentes (líneas bajo "PARTICIPANTES:" o "Asistentes:" al inicio). Cadena separada por comas.
-
-3. "areas": una por cada bloque "### N. Nombre" del texto.
-   - nombre en MAYÚSCULAS (sin número: "ALMACÉN", "ATENCIÓN", etc.)
-   - NUNCA nombres de personas como áreas
-
-4. REGLA CLAVE para los puntos:
-   Cada "- punto principal:" seguido de líneas "  > sub-punto" debe convertirse en:
-   UNA frase por sub-punto con el contexto del padre: "Punto principal: sub-punto."
-   
-   Si el punto principal NO termina en ":" y tiene sub-puntos, combínalos así:
-   "Punto principal — sub-punto1; sub-punto2."
-
-   EJEMPLO de entrada:
-   - Evaluación modelo VOS:
-     > Del 8 al 19 de junio. Con previsión para no tener a nadie en vacaciones.
-   - Pool:
-     > No está utilizando geolocalización en las inscripciones de la web.
-   - Objetivo con estas personas será:
-     > Intentar afiliarlos como EOs.
-     > Captarlos como clientes.
-     > Evaluar venta sin registro previo.
-
-   EJEMPLO de salida correcta:
-   "puntos": [
-     "Evaluación modelo VOS: Del 8 al 19 de junio, con previsión para no tener a nadie en vacaciones.",
-     "Pool: No está utilizando geolocalización en las inscripciones de la web.",
-     "Objetivo con estas personas: Intentar afiliarlos como EOs.",
-     "Objetivo con estas personas: Captarlos como clientes.",
-     "Objetivo con estas personas: Evaluar venta sin registro previo."
-   ]
-
-   Los puntos sin sub-puntos se incluyen tal cual.
-
-5. Solo JSON puro, sin markdown, sin explicaciones.
+1. "fecha": fecha de la reunión en YYYY-MM-DD. Año ${new Date().getFullYear()} si no aparece.
+2. "participantes": solo nombres de asistentes (bajo PARTICIPANTES:), separados por coma.
+3. "areas": una por cada bloque "### N. Nombre". Nombre en MAYÚSCULAS sin número.
+4. PUNTOS: cada "- punto:" con sub-puntos "  > sub" → una frase por sub-punto: "Punto: sub."
+   Los puntos sin sub-puntos se añaden tal cual.
+5. Solo JSON puro, sin markdown.
 
 TEXTO:
 ${rawText.substring(0,9000)}`;
 
-  const res=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,{
-    method:'POST',
-    headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({
-      contents:[{parts:[{text:prompt}]}],
-      generationConfig:{temperature:0.1,maxOutputTokens:2048}
-    })
-  });
+  const res=await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
+    {method:'POST',headers:{'Content-Type':'application/json'},
+     body:JSON.stringify({
+       contents:[{parts:[{text:prompt}]}],
+       generationConfig:{temperature:0.1,maxOutputTokens:3000}
+     })
+    }
+  );
 
   if(!res.ok){
     const err=await res.json().catch(()=>({}));
-    const msg=err?.error?.message||`HTTP ${res.status}`;
-    throw new Error(`Gemini: ${msg}`);
+    throw new Error('Gemini: '+(err?.error?.message||'HTTP '+res.status));
   }
 
   const data=await res.json();
   const text=data?.candidates?.[0]?.content?.parts?.[0]?.text||'';
+  console.log('Gemini raw response:', text.substring(0,500));
   const clean=text.replace(/```json|```/g,'').trim();
 
   let parsed;
   try{ parsed=JSON.parse(clean); }
-  catch(e){ throw new Error('Gemini devolvió un formato inesperado'); }
+  catch(e){ throw new Error('Gemini formato inesperado: '+clean.substring(0,100)); }
 
-  // Build set of all participant names (full name and each word)
   const participantNames=new Set();
   (parsed.participantes||'').split(',').forEach(n=>{
     const name=n.trim().toUpperCase();
-    if(name){ 
-      participantNames.add(name);
-      // Also add each individual word (first name only)
-      name.split(/\s+/).forEach(w=>{ if(w.length>1) participantNames.add(w); });
-    }
+    if(name){ participantNames.add(name); name.split(/\s+/).forEach(w=>{if(w.length>1)participantNames.add(w);}); }
   });
 
   return{
@@ -23941,19 +23879,10 @@ ${rawText.substring(0,9000)}`;
     areas:(parsed.areas||[]).map(a=>({
       nombre:String(a.nombre||'').toUpperCase().trim(),
       puntos:(a.puntos||[]).map(p=>String(p).trim()).filter(p=>p.length>3)
-    })).filter(a=>{
-      if(!a.nombre) return false;
-      // Remove if it IS a participant name or matches any participant word
-      if(participantNames.has(a.nombre)) return false;
-      // Remove single-word "areas" that appear in participant list
-      const words=a.nombre.split(/\s+/);
-      if(words.length<=2 && words.every(w=>participantNames.has(w))) return false;
-      // Remove if zero real points
-      if(!a.puntos.length) return false;
-      return true;
-    })
+    })).filter(a=>a.nombre&&!participantNames.has(a.nombre)&&a.puntos.length>0)
   };
 }
+
 
 // ── REGEX FALLBACK ──
 function parseWithRegex(rawText){
