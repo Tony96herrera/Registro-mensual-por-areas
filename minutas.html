@@ -23688,6 +23688,7 @@ async function handleFile(file){
     if(!rawText||rawText.length<10) throw new Error('El documento parece estar vacío o no se pudo leer');
 
     dzFile.textContent='🤖 Analizando con Gemini AI...';
+    console.log('=== TEXTO ENVIADO A GEMINI ===\n', rawText.substring(0,3000));
 
     // 2. Use Gemini (skip if file:// protocol — browsers block external fetch)
     let parsed;
@@ -23749,12 +23750,64 @@ async function handleFile(file){
 async function extractTextFromDocx(uint8){
   const xml=await extractFileFromZip(uint8,'word/document.xml');
   if(!xml) return '';
+
+  // Parse XML - try both namespace-aware and fallback
   const parser=new DOMParser();
   const doc2=parser.parseFromString(xml,'application/xml');
-  const paras=[...doc2.querySelectorAll('p')];
-  const lines=paras.map(p=>[...p.querySelectorAll('t')].map(t=>t.textContent).join('').trim()).filter(l=>l);
+
+  // Helper: get attribute trying both namespaced and prefixed forms
+  const wa=(el,attr)=>{
+    if(!el) return '';
+    const NS='http://schemas.openxmlformats.org/wordprocessingml/2006/main';
+    return el.getAttributeNS(NS,attr)||el.getAttribute('w:'+attr)||'';
+  };
+
+  // Get all paragraph elements - try namespace then fallback
+  const NS='http://schemas.openxmlformats.org/wordprocessingml/2006/main';
+  let paras=[...doc2.getElementsByTagNameNS(NS,'p')];
+  if(!paras.length) paras=[...doc2.querySelectorAll('p')];
+
+  const getChildren=(el,tag)=>{
+    const r=[...el.getElementsByTagNameNS(NS,tag)];
+    return r.length?r:[...el.querySelectorAll(tag)];
+  };
+
+  const lines=paras.map(p=>{
+    // Get text
+    const tEls=getChildren(p,'t');
+    const text=tEls.map(t=>t.textContent).join('').trim();
+    if(!text) return null;
+
+    // Get numPr > ilvl
+    const numPrs=getChildren(p,'numPr');
+    const numPr=numPrs.length?numPrs[0]:null;
+    let ilvl=null;
+    if(numPr){
+      const ilvlEls=getChildren(numPr,'ilvl');
+      if(ilvlEls.length) ilvl=parseInt(wa(ilvlEls[0],'val')||'0');
+    }
+
+    // Get ind left from pPr
+    const pPrs=getChildren(p,'pPr');
+    const pPr=pPrs.length?pPrs[0]:null;
+    let indLeft=0;
+    if(pPr){
+      const indEls=getChildren(pPr,'ind');
+      if(indEls.length) indLeft=parseInt(wa(indEls[0],'left')||'0');
+    }
+
+    // Classify
+    if(ilvl===null&&(indLeft>=700||(text.length<60&&/^\d+\.\s/.test(text)))){
+      return '\n### '+text; // Area heading
+    }
+    if(ilvl!==null&&ilvl>=1) return '  > '+text; // Sub-point
+    if(ilvl===0) return '- '+text; // Main bullet
+    return text; // Plain text
+  }).filter(l=>l!==null);
+
   return lines.join('\n');
 }
+
 
 async function extractFileFromZip(data,targetPath){
   let i=0;
@@ -23788,9 +23841,15 @@ async function extractFileFromZip(data,targetPath){
 
 // ── GEMINI PARSING ──
 async function parseWithGemini(rawText, apiKey){
-  const prompt=`Eres un asistente experto en extraer información de minutas de reuniones de empresa.
+  const prompt=`Eres un asistente experto en minutas de reuniones de empresa.
 
-Analiza el siguiente texto y devuelve ÚNICAMENTE un JSON con esta estructura:
+El texto tiene este formato estructurado:
+- "### N. Nombre" → título de ÁREA (ej: "### 1. Almacén", "### 6. Atención")
+- "- texto" → punto principal del área
+- "  > texto" → sub-punto que pertenece al punto principal inmediatamente anterior (línea "- " de arriba)
+- Texto sin prefijo → información general (fecha, participantes, etc.)
+
+Devuelve ÚNICAMENTE este JSON:
 {
   "fecha": "YYYY-MM-DD",
   "participantes": "nombre1, nombre2, nombre3",
@@ -23799,21 +23858,48 @@ Analiza el siguiente texto y devuelve ÚNICAMENTE un JSON con esta estructura:
   ]
 }
 
-REGLAS ESTRICTAS:
-1. "fecha": La fecha de celebración de la reunión en formato YYYY-MM-DD. Año por defecto: ${new Date().getFullYear()}.
+REGLAS:
 
-2. "participantes": SOLO los nombres de personas que asistieron a la reunión. Aparecen en secciones como "PARTICIPANTES:", "Asistentes:", "Attendance:" o en listas al inicio. Devuélvelos como una cadena separada por comas. NUNCA pongas nombres de personas en "areas".
+1. "fecha": fecha de la reunión en YYYY-MM-DD. Año por defecto ${new Date().getFullYear()}.
 
-3. "areas": SOLO los departamentos o secciones funcionales de la empresa (Almacén, Marketing, Sistemas, CREO, ATN, Gerencia, Operaciones, etc.) que contienen temas o puntos tratados. 
-   - NUNCA incluyas nombres de personas como áreas (Anton, Albhil, David, Toñi, Tatiana, Veronica, Antonio, etc. son participantes, NO áreas).
-   - Incluye todos los sub-puntos de cada área como elementos del array "puntos".
-   - El nombre del área en MAYÚSCULAS.
-   - Omite áreas que no tengan ningún punto o tema tratado.
+2. "participantes": solo nombres de asistentes (líneas bajo "PARTICIPANTES:" o "Asistentes:" al inicio). Cadena separada por comas.
 
-4. Devuelve SOLO el JSON puro, sin markdown, sin explicaciones, sin bloques de código.
+3. "areas": una por cada bloque "### N. Nombre" del texto.
+   - nombre en MAYÚSCULAS (sin número: "ALMACÉN", "ATENCIÓN", etc.)
+   - NUNCA nombres de personas como áreas
 
-TEXTO DE LA MINUTA:
-${rawText.substring(0,8000)}`;
+4. REGLA CLAVE para los puntos:
+   Cada "- punto principal:" seguido de líneas "  > sub-punto" debe convertirse en:
+   UNA frase por sub-punto con el contexto del padre: "Punto principal: sub-punto."
+   
+   Si el punto principal NO termina en ":" y tiene sub-puntos, combínalos así:
+   "Punto principal — sub-punto1; sub-punto2."
+
+   EJEMPLO de entrada:
+   - Evaluación modelo VOS:
+     > Del 8 al 19 de junio. Con previsión para no tener a nadie en vacaciones.
+   - Pool:
+     > No está utilizando geolocalización en las inscripciones de la web.
+   - Objetivo con estas personas será:
+     > Intentar afiliarlos como EOs.
+     > Captarlos como clientes.
+     > Evaluar venta sin registro previo.
+
+   EJEMPLO de salida correcta:
+   "puntos": [
+     "Evaluación modelo VOS: Del 8 al 19 de junio, con previsión para no tener a nadie en vacaciones.",
+     "Pool: No está utilizando geolocalización en las inscripciones de la web.",
+     "Objetivo con estas personas: Intentar afiliarlos como EOs.",
+     "Objetivo con estas personas: Captarlos como clientes.",
+     "Objetivo con estas personas: Evaluar venta sin registro previo."
+   ]
+
+   Los puntos sin sub-puntos se incluyen tal cual.
+
+5. Solo JSON puro, sin markdown, sin explicaciones.
+
+TEXTO:
+${rawText.substring(0,9000)}`;
 
   const res=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,{
     method:'POST',
