@@ -23245,7 +23245,7 @@ main{flex:1;overflow-y:auto;display:flex;flex-direction:column}
 </div>
 
 <!-- MODAL -->
-<div class="bd" id="bdModal" onclick="closeBdBg(event)">
+<div class="bd" id="bdModal" onmousedown="bdMouseDown(event,'bdModal')" onmouseup="bdMouseUp(event,'bdModal')">
   <div class="modal">
     <div class="mh">
       <div class="mt" id="mTitle">Nueva Minuta</div>
@@ -23286,7 +23286,7 @@ main{flex:1;overflow-y:auto;display:flex;flex-direction:column}
 <div id="toast"></div>
 
 <!-- MODAL IMPORTAR WORD -->
-<div class="bd" id="bdImport" onclick="closeImportBg(event)">
+<div class="bd" id="bdImport" onmousedown="bdMouseDown(event,'bdImport')" onmouseup="bdMouseUp(event,'bdImport')">
   <div class="modal" style="max-width:620px">
     <div class="mh">
       <div class="mt">Importar Minuta desde Word</div>
@@ -23479,7 +23479,6 @@ function openModal(id=null){
   document.getElementById('bdModal').classList.add('open');
 }
 function closeModal(){document.getElementById('bdModal').classList.remove('open');}
-function closeBdBg(e){if(e.target===document.getElementById('bdModal'))closeModal();}
 
 let _acIdx=0;
 function addAreaCard(nombre='',puntos=['']){
@@ -23657,7 +23656,17 @@ function openImport(){
   document.getElementById('bdImport').classList.add('open');
 }
 function closeImport(){document.getElementById('bdImport').classList.remove('open');}
-function closeImportBg(e){if(e.target===document.getElementById('bdImport'))closeImport();}
+
+// Only close backdrop if mousedown AND mouseup both hit the backdrop — prevents closing on text drag
+let _bdDown=null;
+function bdMouseDown(e,id){_bdDown=e.target;}
+function bdMouseUp(e,id){
+  if(_bdDown===document.getElementById(id)&&e.target===document.getElementById(id)){
+    if(id==='bdModal')closeModal();
+    if(id==='bdImport')closeImport();
+  }
+  _bdDown=null;
+}
 
 function dzDragOver(e){e.preventDefault();document.getElementById('dropzone').classList.add('over');}
 function dzDragLeave(){document.getElementById('dropzone').classList.remove('over');}
