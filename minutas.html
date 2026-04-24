@@ -23196,32 +23196,50 @@ main{flex:1;overflow-y:auto;display:flex;flex-direction:column}
 .dropzone:hover,.dropzone.over{border-color:var(--ac);background:rgba(200,241,53,.04)}
 .dropzone.has-file{border-color:var(--ok);background:rgba(127,255,212,.04)}
 ::-webkit-scrollbar{width:5px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--b2);border-radius:3px}
+.burger-wrap{position:relative}
+.burger-btn{width:34px;height:34px;border-radius:var(--rs);background:var(--s2);border:1px solid var(--b2);color:var(--t1);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .13s}
+.burger-btn:hover{background:var(--s3)}.burger-btn.open{background:var(--s3);border-color:var(--ac)}
+.burger-menu{position:absolute;top:calc(100% + 8px);right:0;width:210px;background:var(--s1);border:1px solid var(--b2);border-radius:var(--r);box-shadow:0 8px 24px rgba(0,0,0,.35);overflow:hidden;opacity:0;pointer-events:none;transform:translateY(-6px);transition:opacity .15s,transform .15s;z-index:200}
+.burger-menu.open{opacity:1;pointer-events:all;transform:translateY(0)}
+.burger-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;color:var(--t3);padding:10px 14px 6px}
+.burger-item{display:flex;align-items:center;gap:10px;padding:10px 14px;font-size:13px;color:var(--t2);text-decoration:none;transition:background .1s}
+.burger-item:hover{background:var(--s2);color:var(--t1)}
 </style>
 </head>
 <body>
 <header>
   <div style="display:flex;align-items:center;gap:14px">
-    <div class="logo"><div class="pip"></div>Minutas de Reunión</div>
+    <div class="logo"><div class="pip"></div>Reuniones</div>
     <div class="tsw" onclick="toggleTheme()">
       <div class="tst" id="tst"><div class="tsd" id="tsd">🌙</div></div>
       <span id="tsl">Oscuro</span>
     </div>
   </div>
   <div class="hdr-r">
-    <div class="chip" id="fbChip"><div class="dot"></div>Local</div>
-    <a href="index.html" class="btn bghost bsm" style="text-decoration:none">
-      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
-      Actividades
-    </a>
-    <button class="btn bghost bsm" onclick="openImport()">
-      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+    <button class="btn bghost bsm" onclick="openImport()" style="flex-shrink:0">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
       Importar Word
     </button>
-    <button class="btn bprim bsm" onclick="openModal()">
+    <button class="btn bprim bsm" onclick="openModal()" style="flex-shrink:0">
       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-      Nueva Minuta
+      Nueva Reunión
     </button>
-  </div>
+    <div class="burger-wrap" id="burgerWrap">
+      <button class="burger-btn" id="burgerBtn" onclick="toggleBurger()" title="Navegación">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+      </button>
+      <div class="burger-menu" id="burgerMenu">
+        <div class="burger-label">Navegar a</div>
+        <a href="index.html" class="burger-item">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+          Reportes Semanales
+        </a>
+        <a href="reportes.html" class="burger-item">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="13" y2="17"/></svg>
+          Reportes Mensuales
+        </a>
+      </div>
+    </div>  </div>
 </header>
 
 <div class="shell">
@@ -24057,6 +24075,23 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeModal();closeI
 window.addEventListener('load',()=>{
   applyTheme();renderSidebar();
   setTimeout(()=>{if(window._fe)fbLoad();},400);
+});
+</script>
+<script>
+function toggleBurger(){
+  var btn=document.getElementById('burgerBtn');
+  var menu=document.getElementById('burgerMenu');
+  var open=menu.classList.toggle('open');
+  btn.classList.toggle('open',open);
+}
+document.addEventListener('click',function(e){
+  var w=document.getElementById('burgerWrap');
+  if(w&&!w.contains(e.target)){
+    var m=document.getElementById('burgerMenu');
+    var b=document.getElementById('burgerBtn');
+    if(m)m.classList.remove('open');
+    if(b)b.classList.remove('open');
+  }
 });
 </script>
 </body>
