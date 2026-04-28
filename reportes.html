@@ -2302,56 +2302,91 @@ async function pptDoUpload(){
     const remoteFileName = `${safeArea}_${mes}_${anio}_${safeName}`;
     const remotePath = encodeURIComponent(`${OD_FOLDER}/${remoteFileName}`);
 
-    pptSetOdProgress(10, 'Subiendo archivo...');
+    pptSetOdProgress(10, 'Preparando carpeta en OneDrive...');
+
+    // Ensure folder exists (create if not)
+    try{
+      await fetch(`https://graph.microsoft.com/v1.0/me/drive/root:/${encodeURIComponent(OD_FOLDER)}`,{
+        headers:{'Authorization':'Bearer '+token}
+      }).then(async r=>{
+        if(r.status===404){
+          // Create folder
+          await fetch(`https://graph.microsoft.com/v1.0/me/drive/root/children`,{
+            method:'POST',
+            headers:{'Authorization':'Bearer '+token,'Content-Type':'application/json'},
+            body: JSON.stringify({name:OD_FOLDER,folder:{},'@microsoft.graph.conflictBehavior':'replace'})
+          });
+        }
+      });
+    }catch(e){ console.warn('Folder check:', e); }
+
+    pptSetOdProgress(18, 'Subiendo archivo...');
+
     let uploadedItem;
 
-    if(_pptFile.size <= 4*1024*1024){
-      const ab = await _pptFile.arrayBuffer();
-      pptSetOdProgress(40, 'Subiendo...');
-      const res = await fetch(`https://graph.microsoft.com/v1.0/me/drive/root:/${remotePath}:/content`,{
-        method:'PUT',
-        headers:{'Authorization':'Bearer '+token,'Content-Type':'application/vnd.openxmlformats-officedocument.presentationml.presentation'},
-        body: ab
-      });
-      if(!res.ok){ const t=await res.text(); throw new Error(t); }
-      uploadedItem = await res.json();
-      pptSetOdProgress(75, 'Archivo subido...');
-    } else {
-      // Large file: upload session
-      const sessRes = await fetch(`https://graph.microsoft.com/v1.0/me/drive/root:/${remotePath}:/createUploadSession`,{
+    // Always use upload session (works for any size, more reliable)
+    const sessRes = await fetch(
+      `https://graph.microsoft.com/v1.0/me/drive/root:/${remotePath}:/createUploadSession`,{
         method:'POST',
         headers:{'Authorization':'Bearer '+token,'Content-Type':'application/json'},
-        body: JSON.stringify({item:{'name':remoteFileName,'@microsoft.graph.conflictBehavior':'rename'}})
-      });
-      if(!sessRes.ok) throw new Error('No se pudo crear sesión de subida');
-      const {uploadUrl} = await sessRes.json();
-      const ab = await _pptFile.arrayBuffer();
-      const chunkSize = 5*1024*1024;
-      let offset=0, lastRes;
-      while(offset < _pptFile.size){
-        const end = Math.min(offset+chunkSize, _pptFile.size);
-        lastRes = await fetch(uploadUrl,{
-          method:'PUT',
-          headers:{'Content-Length':String(end-offset),'Content-Range':`bytes ${offset}-${end-1}/${_pptFile.size}`},
-          body: ab.slice(offset,end)
-        });
-        offset = end;
-        pptSetOdProgress(Math.round(10+(offset/_pptFile.size)*65), `Subiendo... ${Math.round((offset/_pptFile.size)*100)}%`);
+        body: JSON.stringify({
+          item:{
+            'name': remoteFileName,
+            '@microsoft.graph.conflictBehavior':'rename'
+          }
+        })
       }
-      uploadedItem = await lastRes.json();
-      pptSetOdProgress(78, 'Generando enlace...');
+    );
+    if(!sessRes.ok){
+      const errText = await sessRes.text();
+      console.error('Session error:', errText);
+      throw new Error('Error al iniciar subida. Verifica que tienes OneDrive activo en tu cuenta de Microsoft.');
     }
+    const sessData = await sessRes.json();
+    const uploadUrl = sessData.uploadUrl;
+    if(!uploadUrl) throw new Error('No se recibió URL de subida de OneDrive');
 
-    // Create anonymous share link
+    const ab = await _pptFile.arrayBuffer();
+    const chunkSize = 5*1024*1024; // 5MB chunks
+    let offset=0, lastRes;
+    while(offset < _pptFile.size){
+      const end = Math.min(offset+chunkSize, _pptFile.size);
+      lastRes = await fetch(uploadUrl,{
+        method:'PUT',
+        headers:{
+          'Content-Length': String(end-offset),
+          'Content-Range': `bytes ${offset}-${end-1}/${_pptFile.size}`
+        },
+        body: ab.slice(offset,end)
+      });
+      if(!lastRes.ok && lastRes.status !== 202 && lastRes.status !== 201 && lastRes.status !== 200){
+        const t = await lastRes.text();
+        throw new Error('Error en chunk de subida: '+t);
+      }
+      offset = end;
+      pptSetOdProgress(Math.round(18+(offset/_pptFile.size)*57), `Subiendo... ${Math.round((offset/_pptFile.size)*100)}%`);
+    }
+    uploadedItem = await lastRes.json();
+    pptSetOdProgress(78, 'Generando enlace de acceso...');
+
+    // Create share link — try anonymous first, fall back to organization
     let shareUrl = uploadedItem?.webUrl || '#';
     try{
-      const shareRes = await fetch(`https://graph.microsoft.com/v1.0/me/drive/items/${uploadedItem.id}/createLink`,{
+      let shareRes = await fetch(`https://graph.microsoft.com/v1.0/me/drive/items/${uploadedItem.id}/createLink`,{
         method:'POST',
         headers:{'Authorization':'Bearer '+token,'Content-Type':'application/json'},
         body: JSON.stringify({type:'view',scope:'anonymous'})
       });
+      if(!shareRes.ok){
+        // Try organization scope (for corporate tenants that block anonymous)
+        shareRes = await fetch(`https://graph.microsoft.com/v1.0/me/drive/items/${uploadedItem.id}/createLink`,{
+          method:'POST',
+          headers:{'Authorization':'Bearer '+token,'Content-Type':'application/json'},
+          body: JSON.stringify({type:'view',scope:'organization'})
+        });
+      }
       if(shareRes.ok){ const sd=await shareRes.json(); shareUrl=sd.link?.webUrl||shareUrl; }
-    }catch(e){}
+    }catch(e){ console.warn('Share link error, using webUrl:', e); }
 
     pptSetOdProgress(95, 'Guardando referencia...');
 
