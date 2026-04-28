@@ -253,7 +253,7 @@ document.addEventListener('click',e=>{
   }
 });
 </script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-authentication-library-for-js/4.0.3/browser/msal-browser.min.js"></script>
+<script src="https://alcdn.msauth.net/browser/2.38.3/js/msal-browser.min.js"></script>
 </head>
 <body>
 
@@ -2568,24 +2568,26 @@ function pptResetDrop(mode){
 // ═══════════════════════════════════════════════════════
 //  ONEDRIVE AUTH (MSAL PKCE)
 // ═══════════════════════════════════════════════════════
-function odGetMsal(){
+async function odGetMsal(){
   if(_msalApp) return _msalApp;
   if(!window.msal) return null;
   try{
-    _msalApp = new msal.PublicClientApplication({
+    const config = {
       auth:{
         clientId: OD_CLIENT_ID,
         authority: `https://login.microsoftonline.com/${OD_TENANT}`,
         redirectUri: 'https://registrosemanal.netlify.app/reportes'
       },
       cache:{ cacheLocation:'sessionStorage', storeAuthStateInCookie:false }
-    });
+    };
+    _msalApp = new msal.PublicClientApplication(config);
+    await _msalApp.initialize();
     return _msalApp;
   }catch(e){ console.error('MSAL init:',e); return null; }
 }
 
 async function odSignIn(){
-  const app = odGetMsal();
+  const app = await odGetMsal();
   const msgEl = document.getElementById('pptOdAuthMsg');
   if(!app){
     if(msgEl) msgEl.textContent = '⚠️ Error al inicializar MSAL. Recarga la página.';
@@ -2610,7 +2612,7 @@ async function odSignIn(){
 }
 
 async function odSignOut(){
-  const app = odGetMsal();
+  const app = await odGetMsal();
   if(app && _odAccount){ try{ await app.logoutPopup({account:_odAccount}); }catch(e){} }
   _odAccount=null; _odToken=null;
   odUpdateUI();
@@ -2619,13 +2621,14 @@ async function odSignOut(){
 }
 
 async function odEnsureToken(){
-  if(!_msalApp || !_odAccount) return _odToken;
+  const app = await odGetMsal();
+  if(!app || !_odAccount) return _odToken;
   try{
-    const r = await _msalApp.acquireTokenSilent({ scopes:['Files.ReadWrite'], account:_odAccount });
+    const r = await app.acquireTokenSilent({ scopes:['Files.ReadWrite'], account:_odAccount });
     _odToken = r.accessToken; return _odToken;
   }catch(e){
     try{
-      const r = await _msalApp.acquireTokenPopup({ scopes:['Files.ReadWrite'], account:_odAccount });
+      const r = await app.acquireTokenPopup({ scopes:['Files.ReadWrite'], account:_odAccount });
       _odToken = r.accessToken; return _odToken;
     }catch(e2){ return null; }
   }
