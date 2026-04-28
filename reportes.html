@@ -2297,36 +2297,36 @@ async function pptDoUpload(){
     const token = await odEnsureToken();
     if(!token) throw new Error('No se pudo obtener acceso a OneDrive');
 
-    const safeArea = _pptAreaSel.replace(/[/\\:*?"<>|]/g,'_');
-    const safeName = _pptFile.name.replace(/[/\\:*?"<>|]/g,'_');
+    const safeArea = _pptAreaSel.replace(/[^a-zA-Z0-9]/g,'_');
+    const safeName = _pptFile.name.replace(/[^a-zA-Z0-9._-]/g,'_');
     const remoteFileName = `${safeArea}_${mes}_${anio}_${safeName}`;
-    const remotePath = encodeURIComponent(`${OD_FOLDER}/${remoteFileName}`);
+    // Use path segments — don't double-encode
+    const remotePath = `${OD_FOLDER}/${remoteFileName}`;
 
     pptSetOdProgress(10, 'Preparando carpeta en OneDrive...');
 
-    // Ensure folder exists (create if not)
-    try{
-      await fetch(`https://graph.microsoft.com/v1.0/me/drive/root:/${encodeURIComponent(OD_FOLDER)}`,{
-        headers:{'Authorization':'Bearer '+token}
-      }).then(async r=>{
-        if(r.status===404){
-          // Create folder
-          await fetch(`https://graph.microsoft.com/v1.0/me/drive/root/children`,{
-            method:'POST',
-            headers:{'Authorization':'Bearer '+token,'Content-Type':'application/json'},
-            body: JSON.stringify({name:OD_FOLDER,folder:{},'@microsoft.graph.conflictBehavior':'replace'})
-          });
-        }
+    // Ensure folder exists
+    const folderCheckRes = await fetch(
+      `https://graph.microsoft.com/v1.0/me/drive/root:/${encodeURIComponent(OD_FOLDER)}`,
+      { headers:{'Authorization':'Bearer '+token} }
+    );
+    if(folderCheckRes.status === 404){
+      await fetch(`https://graph.microsoft.com/v1.0/me/drive/root/children`,{
+        method:'POST',
+        headers:{'Authorization':'Bearer '+token,'Content-Type':'application/json'},
+        body: JSON.stringify({name:OD_FOLDER, folder:{}, '@microsoft.graph.conflictBehavior':'replace'})
       });
-    }catch(e){ console.warn('Folder check:', e); }
+    }
 
     pptSetOdProgress(18, 'Subiendo archivo...');
 
     let uploadedItem;
 
-    // Always use upload session (works for any size, more reliable)
+    // Build the Graph API path correctly — encode each segment separately
+    const graphPath = encodeURIComponent(OD_FOLDER)+'/'+encodeURIComponent(remoteFileName);
+
     const sessRes = await fetch(
-      `https://graph.microsoft.com/v1.0/me/drive/root:/${remotePath}:/createUploadSession`,{
+      `https://graph.microsoft.com/v1.0/me/drive/root:/${graphPath}:/createUploadSession`,{
         method:'POST',
         headers:{'Authorization':'Bearer '+token,'Content-Type':'application/json'},
         body: JSON.stringify({
@@ -2339,8 +2339,13 @@ async function pptDoUpload(){
     );
     if(!sessRes.ok){
       const errText = await sessRes.text();
-      console.error('Session error:', errText);
-      throw new Error('Error al iniciar subida. Verifica que tienes OneDrive activo en tu cuenta de Microsoft.');
+      console.error('Session error response:', errText);
+      let errMsg = 'Error al iniciar subida';
+      try{
+        const errJson = JSON.parse(errText);
+        errMsg = errJson.error?.message || errMsg;
+      }catch(e){}
+      throw new Error(errMsg);
     }
     const sessData = await sessRes.json();
     const uploadUrl = sessData.uploadUrl;
