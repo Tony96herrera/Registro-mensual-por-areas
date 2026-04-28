@@ -558,69 +558,41 @@ document.addEventListener('click',e=>{
 
 <!-- MODAL POWERPOINT -->
 <div class="bd" id="bdPpt" onmousedown="bdMD(event,'bdPpt')" onmouseup="bdMU(event,'bdPpt')">
-  <div class="modal" style="max-width:580px">
+  <div class="modal" style="max-width:520px">
     <div class="mh">
       <div style="display:flex;align-items:center;gap:10px">
         <div style="width:26px;height:26px;background:#c43e1c;border-radius:6px;display:flex;align-items:center;justify-content:center;flex-shrink:0">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="8" y1="8" x2="16" y2="8"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="8" y1="16" x2="12" y2="16"/></svg>
         </div>
-        <div class="mt">Adjuntar PowerPoint</div>
+        <div class="mt">Subir PowerPoint</div>
       </div>
       <button class="mx" onclick="closePptModal()">×</button>
     </div>
-    <div class="mbody" style="gap:0;padding:0">
+    <div class="mbody" style="gap:16px">
 
-      <!-- reporte destino -->
-      <div id="pptReportBar" style="padding:10px 22px 0">
-        <div style="display:flex;flex-direction:column;gap:6px;padding-bottom:10px;border-bottom:1px solid var(--b1)">
-          <label style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--t3)">Reporte destino</label>
-          <select id="pptReporteSel" onchange="pptReporteSelChange()" style="width:100%;background:var(--s2);border:1px solid var(--b2);border-radius:var(--rs);color:var(--t1);font-family:'DM Sans',sans-serif;font-size:13px;padding:8px 10px;outline:none;cursor:pointer;appearance:none;background-image:url('data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2211%22 height=%2211%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%23666%22 stroke-width=%222%22%3E%3Cpolyline points=%226 9 12 15 18 9%22/%3E%3C/svg%3E');background-repeat:no-repeat;background-position:right 9px center">
-            <option value="">— Selecciona un reporte —</option>
-          </select>
-        </div>
+      <!-- Paso 1: Área -->
+      <div class="field">
+        <label>¿De qué área es el reporte?</label>
+        <select id="pptArea" onchange="pptAreaChange()" style="width:100%;background:var(--s2);border:1px solid var(--b2);border-radius:var(--rs);color:var(--t1);font-family:'DM Sans',sans-serif;font-size:13px;padding:8px 10px;outline:none;cursor:pointer;appearance:none;background-image:url('data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2211%22 height=%2211%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%23666%22 stroke-width=%222%22%3E%3Cpolyline points=%226 9 12 15 18 9%22/%3E%3C/svg%3E');background-repeat:no-repeat;background-position:right 9px center">
+          <option value="">— Selecciona un área —</option>
+          <option>CEDIS</option><option>CREO</option><option>ATN</option>
+          <option>MKT</option><option>ALMACÉN</option><option>SISTEMAS</option>
+        </select>
       </div>
 
-      <!-- tabs -->
-      <div class="ppt-modal-tabs" style="margin:0;padding:0 22px">
-        <div class="ppt-tab active" id="pptTabFb" onclick="pptSwitchTab('fb')">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 10 12 5 7 10"/><line x1="12" y1="5" x2="12" y2="15"/></svg>
-          Firebase Storage
-        </div>
-        <div class="ppt-tab" id="pptTabOd" onclick="pptSwitchTab('od')">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/></svg>
-          OneDrive
-        </div>
+      <!-- Mes/año auto (informativo) -->
+      <div id="pptMesInfo" style="display:none;font-size:13px;color:var(--t2);background:var(--s2);border:1px solid var(--b1);border-radius:var(--rs);padding:10px 14px;display:none">
+        📅 Se adjuntará al reporte de <strong id="pptMesInfoTxt"></strong>
       </div>
 
-      <!-- PANEL FIREBASE -->
-      <div id="pptPaneFb" style="padding:18px 22px;display:flex;flex-direction:column;gap:14px">
-        <p style="font-size:13px;color:var(--t2);line-height:1.6">El archivo se almacena en <strong>Firebase Storage</strong>. Los revisores podrán descargarlo directamente desde la web sin login.</p>
-        <div class="ppt-drop" id="pptDropFb"
-          onclick="document.getElementById('pptInputFb').click()"
-          ondragover="pptDragOver(event,'fb')" ondragleave="pptDragLeave(event,'fb')" ondrop="pptDrop(event,'fb')">
-          <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="opacity:.35"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><path d="M12 18v-6"/><path d="M9 15l3-3 3 3"/></svg>
-          <div style="font-size:13px;color:var(--t2)">Arrastra tu <strong>.pptx</strong> aquí o <span style="color:var(--ac);font-weight:600">haz clic</span></div>
-          <div id="pptDropFbFile" style="font-size:12px;color:var(--t3)">Archivos .pptx o .ppt · hasta 100 MB</div>
-        </div>
-        <input type="file" id="pptInputFb" accept=".pptx,.ppt" style="display:none" onchange="pptFileSelect(this.files[0],'fb')">
-        <div id="pptProgFb" style="display:none;flex-direction:column;gap:4px">
-          <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--t3)">
-            <span id="pptProgFbLabel">Subiendo...</span><span id="pptProgFbPct">0%</span>
-          </div>
-          <div class="ppt-prog"><div class="ppt-prog-bar fb" id="pptProgFbBar" style="width:0%"></div></div>
-        </div>
-      </div>
+      <!-- Zona de subida OneDrive -->
+      <div id="pptOdSection" style="display:none;flex-direction:column;gap:10px">
 
-      <!-- PANEL ONEDRIVE -->
-      <div id="pptPaneOd" style="padding:18px 22px;display:none;flex-direction:column;gap:14px">
-        <p style="font-size:13px;color:var(--t2);line-height:1.6">El archivo se sube a tu <strong>OneDrive</strong>. Se genera un enlace compartido para que los revisores puedan descargarlo sin login.</p>
-
-        <!-- Auth: no logado -->
+        <!-- No logado -->
         <div id="pptOdAuthPane" style="display:flex;flex-direction:column;align-items:center;gap:10px;padding:16px;border:1px solid var(--b2);border-radius:var(--rs);background:var(--s2)">
-          <svg width="34" height="34" viewBox="0 0 24 24" fill="none"><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10 10-4.5 10-10S17.5 2 12 2z" fill="#0078d4"/><path d="M7 12l3 3 7-7" stroke="#fff" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
           <div style="text-align:center">
-            <div style="font-size:14px;font-weight:600;color:var(--t1)">Conectar con Microsoft</div>
-            <div style="font-size:12px;color:var(--t3);margin-top:3px">Inicia sesión para acceder a tu OneDrive</div>
+            <div style="font-size:14px;font-weight:600;color:var(--t1)">Conectar con OneDrive</div>
+            <div style="font-size:12px;color:var(--t3);margin-top:3px">Inicia sesión con tu cuenta Microsoft para subir el archivo</div>
           </div>
           <button class="od-sign-btn" onclick="odSignIn()">
             <svg width="16" height="16" viewBox="0 0 21 21"><rect width="10" height="10" fill="#f25022"/><rect x="11" width="10" height="10" fill="#7fba00"/><rect y="11" width="10" height="10" fill="#00a4ef"/><rect x="11" y="11" width="10" height="10" fill="#ffb900"/></svg>
@@ -629,44 +601,45 @@ document.addEventListener('click',e=>{
           <div id="pptOdAuthMsg" style="font-size:12px;color:var(--t3);text-align:center"></div>
         </div>
 
-        <!-- Auth: logado -->
-        <div id="pptOdUserPane" style="display:none;flex-direction:column;gap:12px">
+        <!-- Logado -->
+        <div id="pptOdUserPane" style="display:none;flex-direction:column;gap:10px">
           <div class="od-user-pill">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#0078d4" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
             <span class="od-user-name" id="pptOdUserName"></span>
             <button onclick="odSignOut()" style="font-size:11px;padding:2px 8px;background:transparent;border:1px solid var(--b2);border-radius:4px;color:var(--t3);cursor:pointer">Cerrar sesión</button>
           </div>
+
           <div class="ppt-drop od-mode" id="pptDropOd"
             onclick="document.getElementById('pptInputOd').click()"
-            ondragover="pptDragOver(event,'od')" ondragleave="pptDragLeave(event,'od')" ondrop="pptDrop(event,'od')">
+            ondragover="pptDoDragOver(event)" ondragleave="pptDoDragLeave(event)" ondrop="pptDoDrop(event)">
             <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="opacity:.35"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/><path d="M12 16v-6"/><path d="M9 13l3-3 3 3"/></svg>
             <div style="font-size:13px;color:var(--t2)">Arrastra tu <strong>.pptx</strong> aquí o <span style="color:#0078d4;font-weight:600">haz clic</span></div>
-            <div id="pptDropOdFile" style="font-size:12px;color:var(--t3)">Se subirá a la carpeta <em>Reportes Omnilife</em> en tu OneDrive</div>
+            <div id="pptDropOdFile" style="font-size:12px;color:var(--t3)">El archivo se guardará en OneDrive → carpeta <em>Reportes Omnilife</em></div>
           </div>
-          <input type="file" id="pptInputOd" accept=".pptx,.ppt" style="display:none" onchange="pptFileSelect(this.files[0],'od')">
+          <input type="file" id="pptInputOd" accept=".pptx,.ppt" style="display:none" onchange="pptOdFileSelect(this.files[0])">
+
           <div id="pptProgOd" style="display:none;flex-direction:column;gap:4px">
             <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--t3)">
-              <span id="pptProgOdLabel">Subiendo a OneDrive...</span><span id="pptProgOdPct">0%</span>
+              <span id="pptProgOdLabel">Subiendo a OneDrive...</span>
+              <span id="pptProgOdPct">0%</span>
             </div>
             <div class="ppt-prog"><div class="ppt-prog-bar od" id="pptProgOdBar" style="width:0%"></div></div>
           </div>
         </div>
       </div>
 
-      <!-- Archivos ya adjuntos -->
-      <div id="pptExisting" style="display:none;border-top:1px solid var(--b1)">
-        <div style="padding:12px 22px 0">
-          <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;color:var(--t3);margin-bottom:8px">Presentaciones adjuntas</div>
-          <div id="pptExistingList"></div>
-        </div>
+      <!-- PPTs ya subidos para esta área/mes -->
+      <div id="pptExisting" style="display:none">
+        <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;color:var(--t3);margin-bottom:8px">Ya adjuntos este mes</div>
+        <div id="pptExistingList"></div>
       </div>
 
     </div>
     <div class="mfoot">
       <button class="btn bghost" onclick="closePptModal()">Cerrar</button>
-      <button class="btn bprim" id="pptUploadBtn" style="display:none" onclick="pptUpload()">
+      <button class="btn bprim" id="pptUploadBtn" style="display:none;background:#0078d4" onclick="pptDoUpload()">
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="17 10 12 5 7 10"/><line x1="12" y1="5" x2="12" y2="15"/><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/></svg>
-        <span id="pptUploadBtnLabel">Subir archivo</span>
+        Subir a OneDrive
       </button>
     </div>
   </div>
@@ -704,8 +677,6 @@ async function fbLoad(){
     document.getElementById('fbChip').innerHTML='<div class="dot"></div>Firebase ✓';
     document.getElementById('fbChip').classList.add('on');
     renderSidebar();if(activeId)renderView(activeId);
-    // Refresh PPT selector if the modal is open
-    if(document.getElementById('bdPpt').classList.contains('open')) pptPopulateSelector();
   }catch(e){ console.warn('fbLoad:',e); }
 }
 async function fbAdd(data){
@@ -2176,496 +2147,324 @@ async function autoCleanupOldImages(){
 }
 
 // ═══════════════════════════════════════════════════════
-//  POWERPOINT MODAL  (Firebase Storage + OneDrive)
+//  POWERPOINT — OneDrive (OAuth2 PKCE)
 // ═══════════════════════════════════════════════════════
-
-// ── OneDrive / MSAL config ──────────────────────────────
-// Registra tu app en https://portal.azure.com → Azure AD → App registrations
-// Redirect URI: tipo "Single-page application" → URL exacta de esta página
-// Permisos: Files.ReadWrite, User.Read (Delegated)
 const OD_CLIENT_ID = '7e5e7715-62a2-4be6-8357-af133de8fb83';
-const OD_TENANT   = '7c4d239e-9534-4e05-bb0b-ce4e8c32814a';
+const OD_TENANT    = '7c4d239e-9534-4e05-bb0b-ce4e8c32814a';
 const OD_FOLDER    = 'Reportes Omnilife';
+const OD_SCOPES    = 'Files.ReadWrite User.Read offline_access';
 
-let _pptTab         = 'fb';
-let _pptPendingFile = null;
-let _pptTargetId    = null;
-let _odAccount      = null;
-let _odToken        = null;
+let _odAccount   = null;
+let _odToken     = null;
+let _pptFile     = null;  // archivo seleccionado
+let _pptAreaSel  = null;  // área seleccionada
 
-// ── Helpers ──────────────────────────────────────────────
-function pptSetProgress(mode, pct, label){
-  const prog = document.getElementById(`pptProg${mode==='fb'?'Fb':'Od'}`);
-  const bar  = document.getElementById(`pptProg${mode==='fb'?'Fb':'Od'}Bar`);
-  const lbl  = document.getElementById(`pptProg${mode==='fb'?'Fb':'Od'}Label`);
-  const pctEl= document.getElementById(`pptProg${mode==='fb'?'Fb':'Od'}Pct`);
-  if(pct === null){ prog.style.display='none'; return; }
-  prog.style.display='flex';
-  bar.style.width = pct+'%';
-  if(label) lbl.textContent = label;
-  if(pctEl) pctEl.textContent = pct+'%';
+// ── Modal open/close ──────────────────────────────────
+function openPptModal(){
+  _pptFile = null;
+  _pptAreaSel = null;
+  document.getElementById('pptArea').value = '';
+  document.getElementById('pptMesInfo').style.display = 'none';
+  document.getElementById('pptOdSection').style.display = 'none';
+  document.getElementById('pptUploadBtn').style.display = 'none';
+  document.getElementById('pptExisting').style.display = 'none';
+  const drop = document.getElementById('pptDropOd');
+  if(drop){ drop.classList.remove('has-file'); }
+  document.getElementById('pptDropOdFile').textContent = 'El archivo se guardará en OneDrive → carpeta Reportes Omnilife';
+  pptSetOdProgress(null);
+  odUpdateUI();
+  document.getElementById('bdPpt').classList.add('open');
+}
+function closePptModal(){ document.getElementById('bdPpt').classList.remove('open'); }
+
+// ── Area selected → show month info + upload zone ────
+function pptAreaChange(){
+  const area = document.getElementById('pptArea').value;
+  _pptAreaSel = area || null;
+  _pptFile = null;
+  document.getElementById('pptUploadBtn').style.display = 'none';
+  const drop = document.getElementById('pptDropOd');
+  if(drop) drop.classList.remove('has-file');
+  document.getElementById('pptDropOdFile').textContent = 'El archivo se guardará en OneDrive → carpeta Reportes Omnilife';
+
+  if(!area){
+    document.getElementById('pptMesInfo').style.display = 'none';
+    document.getElementById('pptOdSection').style.display = 'none';
+    document.getElementById('pptExisting').style.display = 'none';
+    return;
+  }
+
+  // Show month info
+  const now = new Date();
+  const mes = MONTHS[now.getMonth()];
+  const anio = now.getFullYear();
+  document.getElementById('pptMesInfoTxt').textContent = `${area} — ${mes} ${anio}`;
+  document.getElementById('pptMesInfo').style.display = '';
+
+  // Show upload section
+  document.getElementById('pptOdSection').style.display = 'flex';
+  odUpdateUI();
+
+  // Show existing PPTs for this area/month
+  pptShowExisting(area, mes, anio);
 }
 
-function pptRenderExisting(){
-  const r = reportes.find(x=>x.id===_pptTargetId);
-  const files = r?.presentaciones||[];
+function pptShowExisting(area, mes, anio){
+  // Find matching report
+  const r = reportes.find(x => x.area===area && x.mes===mes && String(x.anio)===String(anio));
+  const files = r?.presentaciones || [];
   const wrap = document.getElementById('pptExisting');
   const list = document.getElementById('pptExistingList');
   if(!files.length){ wrap.style.display='none'; return; }
   wrap.style.display='';
   list.innerHTML = files.map((f,i)=>`
-    <div class="ppt-card" style="padding:10px 0;border-bottom:1px solid var(--b1)">
-      <div class="ppt-icon" style="width:30px;height:30px;font-size:9px">PPT</div>
+    <div class="ppt-card">
+      <div class="ppt-icon">PPT</div>
       <div class="ppt-info">
         <div class="ppt-name">${esc(f.name)}</div>
         <div class="ppt-meta">
-          <span class="ppt-source ${f.source==='onedrive'?'od':'fb'}">${f.source==='onedrive'?'OneDrive':'Firebase'}</span>
-          ${f.size?`<span>${(f.size/1024/1024).toFixed(1)} MB</span>`:''}
+          <span class="ppt-source od">OneDrive</span>
+          ${f.uploadedAt ? `<span>${new Date(f.uploadedAt).toLocaleDateString('es-ES',{day:'2-digit',month:'short',year:'numeric'})}</span>` : ''}
         </div>
       </div>
       <div class="ppt-actions">
-        ${f.source==='onedrive'
-          ? `<a href="${esc(f.shareUrl||f.webUrl||'#')}" target="_blank" class="ppt-btn od-open" style="font-size:11px;padding:4px 8px">Ver/Descargar</a>`
-          : `<a href="${esc(f.downloadUrl||'#')}" target="_blank" download="${esc(f.name)}" class="ppt-btn dl" style="font-size:11px;padding:4px 8px">Descargar</a>`
-        }
-        <button class="ppt-btn danger" style="font-size:11px;padding:4px 6px" onclick="pptDeleteFile(${i})" title="Quitar">
+        <a href="${esc(f.shareUrl||'#')}" target="_blank" class="ppt-btn od-open" style="font-size:11px;padding:4px 10px">Ver / Descargar</a>
+        <button class="ppt-btn danger" onclick="pptDeleteFromArea('${area}','${mes}',${anio},${i})" title="Quitar">
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
         </button>
       </div>
     </div>`).join('');
 }
 
-// ── Modal open / close ────────────────────────────────────
-function openPptModal(){
-  _pptTargetId = activeId;
-  _pptPendingFile = null;
-
-  // Reset drops
-  ['Fb','Od'].forEach(s=>{
-    const drop = document.getElementById('pptDrop'+s);
-    const fileLabel = document.getElementById('pptDrop'+s+'File');
-    if(drop){ drop.classList.remove('has-file','over'); }
-    if(fileLabel && s==='Fb') fileLabel.textContent = 'Archivos .pptx o .ppt · hasta 100 MB';
-    if(fileLabel && s==='Od') fileLabel.textContent = 'Se subirá a la carpeta Reportes Omnilife en tu OneDrive';
-    pptSetProgress(s.toLowerCase(), null);
-  });
-
-  document.getElementById('pptUploadBtn').style.display='none';
-  pptSwitchTab(_pptTab);
-  pptPopulateSelector();
-  pptRenderExisting();
-  odUpdateUI();
-  document.getElementById('bdPpt').classList.add('open');
+async function pptDeleteFromArea(area, mes, anio, i){
+  if(!confirm('¿Quitar este enlace del reporte?')) return;
+  const r = reportes.find(x => x.area===area && x.mes===mes && String(x.anio)===String(anio));
+  if(!r) return;
+  r.presentaciones = (r.presentaciones||[]).filter((_,j)=>j!==i);
+  saveLocal();
+  await fbUp(r.id, {presentaciones: r.presentaciones});
+  pptShowExisting(area, mes, anio);
+  if(activeId===r.id) renderView(activeId);
+  toast('Eliminado','success');
 }
 
-function pptPopulateSelector(){
-  const MONTHS_IDX = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
-  const sel = document.getElementById('pptReporteSel');
-  if(!sel) return;
-  sel.innerHTML = '<option value="">— Selecciona un reporte —</option>';
+// ── Drag & drop ───────────────────────────────────────
+function pptDoDragOver(e){ e.preventDefault(); document.getElementById('pptDropOd')?.classList.add('over'); }
+function pptDoDragLeave(e){ document.getElementById('pptDropOd')?.classList.remove('over'); }
+function pptDoDrop(e){ e.preventDefault(); document.getElementById('pptDropOd')?.classList.remove('over'); pptOdFileSelect(e.dataTransfer.files[0]); }
 
-  if(!reportes || reportes.length === 0){
-    sel.innerHTML = '<option value="" disabled>⏳ Cargando reportes... (abre de nuevo en un momento)</option>';
-    // Auto-retry once after 1.5s in case Firebase is still loading
-    setTimeout(()=>{
-      if(document.getElementById('bdPpt').classList.contains('open')){
-        pptPopulateSelector();
-      }
-    }, 1500);
-    return;
-  }
-
-  [...reportes]
-    .sort((a,b)=>{
-      const ma = MONTHS_IDX.indexOf(a.mes)+1 || 0;
-      const mb = MONTHS_IDX.indexOf(b.mes)+1 || 0;
-      const da = `${a.anio||0}-${String(ma).padStart(2,'0')}`;
-      const db = `${b.anio||0}-${String(mb).padStart(2,'0')}`;
-      return db.localeCompare(da);
-    })
-    .forEach(r=>{
-      const o = document.createElement('option');
-      o.value = r.id;
-      o.textContent = `${r.area||'Sin área'} — ${r.mes||''} ${r.anio||''}${r.autor?' ('+r.autor+')':''}`;
-      if(r.id === activeId) o.selected = true;
-      sel.appendChild(o);
-    });
-
-  // Pre-select active report
-  if(activeId){
-    sel.value = activeId;
-    _pptTargetId = activeId;
-  }
-}
-
-function pptReporteSelChange(){
-  const sel = document.getElementById('pptReporteSel');
-  _pptTargetId = sel.value || null;
-  pptRenderExisting();
-  if(_pptPendingFile && _pptTargetId){
-    const btn = document.getElementById('pptUploadBtn');
-    if(btn) btn.style.display='inline-flex';
-  }
-}
-
-function closePptModal(){
-  document.getElementById('bdPpt').classList.remove('open');
-}
-
-function pptSwitchTab(tab){
-  _pptTab = tab;
-  _pptPendingFile = null;
-  document.getElementById('pptTabFb').className = 'ppt-tab'+(tab==='fb'?' active':'');
-  document.getElementById('pptTabOd').className = 'ppt-tab'+(tab==='od'?' active od':'');
-  document.getElementById('pptPaneFb').style.display = tab==='fb' ? 'flex' : 'none';
-  document.getElementById('pptPaneOd').style.display = tab==='od' ? 'flex' : 'none';
-  document.getElementById('pptUploadBtn').style.display = 'none';
-  const lbl = document.getElementById('pptUploadBtnLabel');
-  if(lbl) lbl.textContent = tab==='fb' ? 'Subir a Firebase' : 'Subir a OneDrive';
-}
-
-// ── Drag & drop / file select ─────────────────────────────
-function pptDragOver(e, mode){
-  e.preventDefault();
-  document.getElementById('pptDrop'+mode.toUpperCase().charAt(0)+mode.slice(1).toUpperCase().charAt(0)+(mode==='fb'?'b':'d'))?.classList.add('over');
-  const dropId = mode==='fb' ? 'pptDropFb' : 'pptDropOd';
-  document.getElementById(dropId)?.classList.add('over');
-}
-function pptDragLeave(e, mode){
-  const dropId = mode==='fb' ? 'pptDropFb' : 'pptDropOd';
-  document.getElementById(dropId)?.classList.remove('over');
-}
-function pptDrop(e, mode){
-  e.preventDefault();
-  const dropId = mode==='fb' ? 'pptDropFb' : 'pptDropOd';
-  document.getElementById(dropId)?.classList.remove('over');
-  pptFileSelect(e.dataTransfer.files[0], mode);
-}
-function pptFileSelect(file, mode){
+function pptOdFileSelect(file){
   if(!file) return;
-  if(!file.name.match(/\.pptx?$/i)){ toast('Solo archivos .pptx o .ppt', 'error'); return; }
-  if(file.size > 100*1024*1024){ toast('Máximo 100 MB por archivo','error'); return; }
-  _pptPendingFile = file;
-  const dropId  = mode==='fb' ? 'pptDropFb'     : 'pptDropOd';
-  const labelId = mode==='fb' ? 'pptDropFbFile' : 'pptDropOdFile';
-  const drop = document.getElementById(dropId);
-  const lbl  = document.getElementById(labelId);
-  if(drop){ drop.classList.add('has-file'); }
-  if(lbl)  lbl.textContent = `✓ ${file.name}  (${(file.size/1024/1024).toFixed(1)} MB)`;
-  const btn = document.getElementById('pptUploadBtn');
-  const btnLbl = document.getElementById('pptUploadBtnLabel');
-  if(btnLbl) btnLbl.textContent = mode==='fb' ? 'Subir a Firebase' : 'Subir a OneDrive';
-  // Always show button — validate target at upload time with a clear message
-  if(btn){ btn.style.display='inline-flex'; }
-  if(mode==='od' && !_odAccount){
-    toast('Inicia sesión con Microsoft primero','error');
-    if(btn) btn.style.display='none';
-  }
+  if(!file.name.match(/\.pptx?$/i)){ toast('Solo archivos .pptx o .ppt','error'); return; }
+  if(file.size > 250*1024*1024){ toast('Máximo 250 MB','error'); return; }
+  _pptFile = file;
+  const drop = document.getElementById('pptDropOd');
+  if(drop) drop.classList.add('has-file');
+  document.getElementById('pptDropOdFile').textContent = `✓ ${file.name}  (${(file.size/1024/1024).toFixed(1)} MB)`;
+  if(_odAccount) document.getElementById('pptUploadBtn').style.display = 'inline-flex';
 }
 
-// ── Upload dispatcher ─────────────────────────────────────
-async function pptUpload(){
-  if(!_pptPendingFile){ toast('Selecciona un archivo primero','error'); return; }
-  if(!_pptTargetId){
-    // Highlight the selector
-    const sel = document.getElementById('pptReporteSel');
-    if(sel){ sel.style.borderColor='var(--er)'; sel.focus(); setTimeout(()=>sel.style.borderColor='',2000); }
-    toast('Elige a qué reporte adjuntar el archivo','error');
-    return;
-  }
-  if(_pptTab==='fb') await pptUploadFirebase();
-  else               await pptUploadOneDrive();
+function pptSetOdProgress(pct, label){
+  const wrap = document.getElementById('pptProgOd');
+  const bar  = document.getElementById('pptProgOdBar');
+  const lbl  = document.getElementById('pptProgOdLabel');
+  const pctEl= document.getElementById('pptProgOdPct');
+  if(pct===null){ if(wrap) wrap.style.display='none'; return; }
+  if(wrap) wrap.style.display='flex';
+  if(bar)  bar.style.width = pct+'%';
+  if(lbl && label)  lbl.textContent = label;
+  if(pctEl) pctEl.textContent = pct+'%';
 }
 
-// ── Firebase Storage upload ───────────────────────────────
-async function pptUploadFirebase(){
-  if(!window._fe || !window._st){ toast('Firebase no configurado','error'); return; }
-  const file = _pptPendingFile;
-  const btn  = document.getElementById('pptUploadBtn');
-  btn.disabled = true;
-  pptSetProgress('fb', 0, 'Subiendo a Firebase...');
-
-  try{
-    const {ref, uploadBytes, getDownloadURL} = window._sf;
-    const path = `presentaciones/${_pptTargetId}/${Date.now()}_${file.name}`;
-    const storageRef = ref(window._st, path);
-
-    // Simulate progress (Firebase uploadBytes doesn't report progress easily)
-    pptSetProgress('fb', 30, 'Subiendo archivo...');
-    const snap = await uploadBytes(storageRef, file);
-    pptSetProgress('fb', 80, 'Obteniendo enlace...');
-    const downloadUrl = await getDownloadURL(snap.ref);
-    pptSetProgress('fb', 100, '¡Listo!');
-
-    await pptSaveRef({
-      name: file.name,
-      source: 'firebase',
-      downloadUrl,
-      storagePath: path,
-      size: file.size,
-      uploadedAt: new Date().toISOString()
-    });
-
-    toast('PowerPoint subido a Firebase ✓','success');
-    pptResetDrop('fb');
-    pptRenderExisting();
-    renderView(activeId);
-  }catch(e){
-    console.error(e);
-    toast('Error al subir: '+e.message,'error');
-    pptSetProgress('fb', null);
-  }finally{
-    btn.disabled = false;
-    setTimeout(()=>pptSetProgress('fb', null), 3000);
-  }
-}
-
-// ── OneDrive upload ───────────────────────────────────────
-async function pptUploadOneDrive(){
+// ── Upload ────────────────────────────────────────────
+async function pptDoUpload(){
+  if(!_pptFile){ toast('Selecciona un archivo primero','error'); return; }
+  if(!_pptAreaSel){ toast('Selecciona un área primero','error'); return; }
   if(!_odToken){ toast('Inicia sesión con Microsoft primero','error'); return; }
-  const file = _pptPendingFile;
-  const btn  = document.getElementById('pptUploadBtn');
+
+  const now  = new Date();
+  const mes  = MONTHS[now.getMonth()];
+  const anio = now.getFullYear();
+
+  // Find or note report for this area+month
+  let r = reportes.find(x => x.area===_pptAreaSel && x.mes===mes && String(x.anio)===String(anio));
+
+  const btn = document.getElementById('pptUploadBtn');
   btn.disabled = true;
-  pptSetProgress('od', 0, 'Preparando subida...');
+  pptSetOdProgress(0, 'Preparando subida...');
 
   try{
     const token = await odEnsureToken();
-    if(!token) throw new Error('No se pudo obtener token de acceso');
+    if(!token) throw new Error('No se pudo obtener acceso a OneDrive');
 
-    const r = reportes.find(x=>x.id===_pptTargetId);
-    const safeArea = (r?.area||'Area').replace(/[/\\:*?"<>|]/g,'_');
-    const safeName = file.name.replace(/[/\\:*?"<>|]/g,'_');
-    const remoteFileName = `${safeArea}_${r?.mes||''}_${r?.anio||''}_${safeName}`;
+    const safeArea = _pptAreaSel.replace(/[/\\:*?"<>|]/g,'_');
+    const safeName = _pptFile.name.replace(/[/\\:*?"<>|]/g,'_');
+    const remoteFileName = `${safeArea}_${mes}_${anio}_${safeName}`;
     const remotePath = encodeURIComponent(`${OD_FOLDER}/${remoteFileName}`);
 
-    pptSetProgress('od', 15, 'Subiendo archivo...');
-
+    pptSetOdProgress(10, 'Subiendo archivo...');
     let uploadedItem;
 
-    if(file.size <= 4*1024*1024){
-      // Simple PUT upload
-      const ab = await file.arrayBuffer();
-      const res = await fetch(
-        `https://graph.microsoft.com/v1.0/me/drive/root:/${remotePath}:/content`,
-        { method:'PUT',
-          headers:{ 'Authorization':'Bearer '+token,
-                    'Content-Type':'application/vnd.openxmlformats-officedocument.presentationml.presentation' },
-          body: ab }
-      );
-      if(!res.ok){ const t=await res.text(); throw new Error('Graph error: '+t); }
+    if(_pptFile.size <= 4*1024*1024){
+      const ab = await _pptFile.arrayBuffer();
+      pptSetOdProgress(40, 'Subiendo...');
+      const res = await fetch(`https://graph.microsoft.com/v1.0/me/drive/root:/${remotePath}:/content`,{
+        method:'PUT',
+        headers:{'Authorization':'Bearer '+token,'Content-Type':'application/vnd.openxmlformats-officedocument.presentationml.presentation'},
+        body: ab
+      });
+      if(!res.ok){ const t=await res.text(); throw new Error(t); }
       uploadedItem = await res.json();
-      pptSetProgress('od', 70, 'Archivo subido...');
+      pptSetOdProgress(75, 'Archivo subido...');
     } else {
-      // Upload session for large files
-      const sessRes = await fetch(
-        `https://graph.microsoft.com/v1.0/me/drive/root:/${remotePath}:/createUploadSession`,
-        { method:'POST',
-          headers:{ 'Authorization':'Bearer '+token, 'Content-Type':'application/json' },
-          body: JSON.stringify({ item:{ 'name': remoteFileName, '@microsoft.graph.conflictBehavior':'rename' }}) }
-      );
+      // Large file: upload session
+      const sessRes = await fetch(`https://graph.microsoft.com/v1.0/me/drive/root:/${remotePath}:/createUploadSession`,{
+        method:'POST',
+        headers:{'Authorization':'Bearer '+token,'Content-Type':'application/json'},
+        body: JSON.stringify({item:{'name':remoteFileName,'@microsoft.graph.conflictBehavior':'rename'}})
+      });
       if(!sessRes.ok) throw new Error('No se pudo crear sesión de subida');
       const {uploadUrl} = await sessRes.json();
-      const ab = await file.arrayBuffer();
-      const chunkSize = 3*1024*1024;
-      let offset = 0;
-      while(offset < file.size){
-        const end = Math.min(offset+chunkSize, file.size);
-        const res = await fetch(uploadUrl,{
+      const ab = await _pptFile.arrayBuffer();
+      const chunkSize = 5*1024*1024;
+      let offset=0, lastRes;
+      while(offset < _pptFile.size){
+        const end = Math.min(offset+chunkSize, _pptFile.size);
+        lastRes = await fetch(uploadUrl,{
           method:'PUT',
-          headers:{
-            'Content-Length': String(end-offset),
-            'Content-Range': `bytes ${offset}-${end-1}/${file.size}`
-          },
+          headers:{'Content-Length':String(end-offset),'Content-Range':`bytes ${offset}-${end-1}/${_pptFile.size}`},
           body: ab.slice(offset,end)
         });
         offset = end;
-        pptSetProgress('od', Math.round(15+(offset/file.size)*55), 'Subiendo... '+Math.round((offset/file.size)*100)+'%');
-        if(offset >= file.size){ uploadedItem = await res.json(); }
+        pptSetOdProgress(Math.round(10+(offset/_pptFile.size)*65), `Subiendo... ${Math.round((offset/_pptFile.size)*100)}%`);
       }
+      uploadedItem = await lastRes.json();
+      pptSetOdProgress(78, 'Generando enlace...');
     }
 
-    pptSetProgress('od', 75, 'Creando enlace compartido...');
-
-    // Create a shareable anonymous download link
-    let shareUrl = uploadedItem?.webUrl;
+    // Create anonymous share link
+    let shareUrl = uploadedItem?.webUrl || '#';
     try{
-      const shareRes = await fetch(
-        `https://graph.microsoft.com/v1.0/me/drive/items/${uploadedItem.id}/createLink`,
-        { method:'POST',
-          headers:{ 'Authorization':'Bearer '+token, 'Content-Type':'application/json' },
-          body: JSON.stringify({ type:'view', scope:'anonymous' }) }
-      );
-      if(shareRes.ok){
-        const sd = await shareRes.json();
-        shareUrl = sd.link?.webUrl || shareUrl;
-      }
-    }catch(e){ console.warn('Share link fallback to webUrl'); }
+      const shareRes = await fetch(`https://graph.microsoft.com/v1.0/me/drive/items/${uploadedItem.id}/createLink`,{
+        method:'POST',
+        headers:{'Authorization':'Bearer '+token,'Content-Type':'application/json'},
+        body: JSON.stringify({type:'view',scope:'anonymous'})
+      });
+      if(shareRes.ok){ const sd=await shareRes.json(); shareUrl=sd.link?.webUrl||shareUrl; }
+    }catch(e){}
 
-    pptSetProgress('od', 100, '¡Subido a OneDrive!');
+    pptSetOdProgress(95, 'Guardando referencia...');
 
-    await pptSaveRef({
-      name: file.name,
+    const pptRef = {
+      name: _pptFile.name,
       source: 'onedrive',
       shareUrl,
       webUrl: uploadedItem?.webUrl,
       driveItemId: uploadedItem?.id,
-      size: file.size,
+      size: _pptFile.size,
       uploadedAt: new Date().toISOString()
-    });
+    };
 
+    // Save to the matching report if it exists, otherwise store in a general PPT collection
+    if(r){
+      if(!r.presentaciones) r.presentaciones=[];
+      r.presentaciones.push(pptRef);
+      saveLocal();
+      await fbUp(r.id, {presentaciones: r.presentaciones});
+      if(activeId===r.id) renderView(activeId);
+    } else {
+      // No report yet for this area/month — save in a standalone ppts collection in Firestore
+      if(window._fe && window._db){
+        const {collection,addDoc} = window._ff;
+        await addDoc(collection(window._db,'presentaciones'),{
+          area:_pptAreaSel, mes, anio, ...pptRef, createdAt:new Date().toISOString()
+        });
+      }
+      toast(`⚠️ No hay reporte de ${_pptAreaSel} para ${mes} ${anio}. El PPT se guardó en OneDrive igualmente.`,'success');
+    }
+
+    pptSetOdProgress(100, '¡Subido correctamente!');
     toast('PowerPoint subido a OneDrive ✓','success');
-    pptResetDrop('od');
-    pptRenderExisting();
-    renderView(activeId);
+
+    // Reset file
+    _pptFile = null;
+    document.getElementById('pptDropOd').classList.remove('has-file');
+    document.getElementById('pptDropOdFile').textContent = 'El archivo se guardará en OneDrive → carpeta Reportes Omnilife';
+    document.getElementById('pptUploadBtn').style.display = 'none';
+    pptShowExisting(_pptAreaSel, mes, anio);
+
   }catch(e){
     console.error(e);
-    toast('Error al subir: '+e.message,'error');
-    pptSetProgress('od', null);
+    toast('Error: '+e.message,'error');
+    pptSetOdProgress(null);
   }finally{
     btn.disabled = false;
-    setTimeout(()=>pptSetProgress('od', null), 3500);
+    setTimeout(()=>pptSetOdProgress(null), 3500);
   }
-}
-
-// ── Save PPT reference to report ─────────────────────────
-async function pptSaveRef(ref){
-  const idx = reportes.findIndex(x=>x.id===_pptTargetId);
-  if(idx===-1) return;
-  if(!reportes[idx].presentaciones) reportes[idx].presentaciones = [];
-  reportes[idx].presentaciones.push(ref);
-  saveLocal();
-  await fbUp(_pptTargetId, { presentaciones: reportes[idx].presentaciones });
-}
-
-// ── Delete PPT file reference ─────────────────────────────
-async function pptDeleteFile(i){
-  if(!confirm('¿Quitar esta presentación del reporte?\n(El archivo en Firebase/OneDrive no se eliminará automáticamente)')) return;
-  const idx = reportes.findIndex(x=>x.id===_pptTargetId);
-  if(idx===-1) return;
-  reportes[idx].presentaciones = (reportes[idx].presentaciones||[]).filter((_,j)=>j!==i);
-  saveLocal();
-  await fbUp(_pptTargetId, { presentaciones: reportes[idx].presentaciones });
-  pptRenderExisting();
-  if(activeId===_pptTargetId) renderView(activeId);
-  toast('Presentación eliminada del reporte','success');
-}
-
-// ── Reset drop zone ───────────────────────────────────────
-function pptResetDrop(mode){
-  _pptPendingFile = null;
-  const dropId  = mode==='fb' ? 'pptDropFb'     : 'pptDropOd';
-  const labelId = mode==='fb' ? 'pptDropFbFile' : 'pptDropOdFile';
-  const drop = document.getElementById(dropId);
-  const lbl  = document.getElementById(labelId);
-  if(drop) drop.classList.remove('has-file');
-  if(lbl)  lbl.textContent = mode==='fb'
-    ? 'Archivos .pptx o .ppt · hasta 100 MB'
-    : 'Se subirá a la carpeta Reportes Omnilife en tu OneDrive';
-  document.getElementById('pptUploadBtn').style.display='none';
 }
 
 // ═══════════════════════════════════════════════════════
 //  ONEDRIVE AUTH — OAuth2 PKCE (sin librería externa)
 // ═══════════════════════════════════════════════════════
-const OD_SCOPES = 'Files.ReadWrite User.Read offline_access';
-
-// ── PKCE helpers ─────────────────────────────────────────
 async function pkceChallenge(){
-  const verifier = Array.from(crypto.getRandomValues(new Uint8Array(32)))
-    .map(b=>b.toString(16).padStart(2,'0')).join('');
+  const verifier = Array.from(crypto.getRandomValues(new Uint8Array(32))).map(b=>b.toString(16).padStart(2,'0')).join('');
   sessionStorage.setItem('od_pkce_verifier', verifier);
   const data = new TextEncoder().encode(verifier);
   const hash = await crypto.subtle.digest('SHA-256', data);
-  const challenge = btoa(String.fromCharCode(...new Uint8Array(hash)))
-    .replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+  const challenge = btoa(String.fromCharCode(...new Uint8Array(hash))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
   return { verifier, challenge };
 }
 
-// ── Popup-based OAuth2 flow ───────────────────────────────
 async function odSignIn(){
   const msgEl = document.getElementById('pptOdAuthMsg');
   try{
     if(msgEl) msgEl.textContent = 'Abriendo ventana de Microsoft...';
-
     const { verifier, challenge } = await pkceChallenge();
     const state = Math.random().toString(36).slice(2);
     sessionStorage.setItem('od_state', state);
-
     const params = new URLSearchParams({
-      client_id:     OD_CLIENT_ID,
-      response_type: 'code',
-      redirect_uri:  'https://registrosemanal.netlify.app/reportes',
-      scope:         OD_SCOPES,
-      state,
-      code_challenge:        challenge,
-      code_challenge_method: 'S256',
-      prompt:        'select_account'
+      client_id: OD_CLIENT_ID, response_type:'code',
+      redirect_uri:'https://registrosemanal.netlify.app/reportes',
+      scope: OD_SCOPES, state,
+      code_challenge: challenge, code_challenge_method:'S256', prompt:'select_account'
     });
-
-    const authUrl = `https://login.microsoftonline.com/${OD_TENANT}/oauth2/v2.0/authorize?${params}`;
-
-    // Open popup
-    const popup = window.open(authUrl, 'msauth', 'width=500,height=650,left=400,top=100');
-    if(!popup){ throw new Error('El navegador bloqueó el popup. Permite popups para esta página.'); }
-
-    // Listen for redirect back
-    await new Promise((resolve, reject)=>{
-      const interval = setInterval(async()=>{
+    const popup = window.open(`https://login.microsoftonline.com/${OD_TENANT}/oauth2/v2.0/authorize?${params}`,'msauth','width=500,height=650,left=400,top=100');
+    if(!popup) throw new Error('El navegador bloqueó el popup. Permite popups para esta página.');
+    await new Promise((resolve,reject)=>{
+      const iv = setInterval(async()=>{
         try{
-          if(popup.closed){ clearInterval(interval); reject(new Error('Ventana cerrada sin completar el login')); return; }
-          let href = '';
-          try{ href = popup.location.href; }catch(e){ return; } // cross-origin, wait
+          if(popup.closed){ clearInterval(iv); reject(new Error('Ventana cerrada')); return; }
+          let href=''; try{ href=popup.location.href; }catch(e){ return; }
           if(!href.includes('registrosemanal.netlify.app')) return;
-
-          clearInterval(interval);
-          popup.close();
-
-          const url = new URL(href);
-          const code  = url.searchParams.get('code');
-          const retState = url.searchParams.get('state');
-          const error = url.searchParams.get('error');
-
-          if(error) throw new Error(url.searchParams.get('error_description')||error);
-          if(retState !== sessionStorage.getItem('od_state')) throw new Error('State mismatch');
-          if(!code) throw new Error('No se recibió código de autorización');
-
-          // Exchange code for token
-          if(msgEl) msgEl.textContent = 'Obteniendo acceso...';
-          const tokenRes = await fetch(`https://login.microsoftonline.com/${OD_TENANT}/oauth2/v2.0/token`, {
-            method: 'POST',
-            headers: {'Content-Type':'application/x-www-form-urlencoded'},
-            body: new URLSearchParams({
-              client_id:     OD_CLIENT_ID,
-              grant_type:    'authorization_code',
-              code,
-              redirect_uri:  'https://registrosemanal.netlify.app/reportes',
-              code_verifier: verifier,
-              scope:         OD_SCOPES
-            })
+          clearInterval(iv); popup.close();
+          const url=new URL(href);
+          const code=url.searchParams.get('code');
+          const err=url.searchParams.get('error');
+          if(err) throw new Error(url.searchParams.get('error_description')||err);
+          if(url.searchParams.get('state')!==sessionStorage.getItem('od_state')) throw new Error('State mismatch');
+          if(!code) throw new Error('No se recibió código');
+          if(msgEl) msgEl.textContent='Obteniendo acceso...';
+          const tr=await fetch(`https://login.microsoftonline.com/${OD_TENANT}/oauth2/v2.0/token`,{
+            method:'POST', headers:{'Content-Type':'application/x-www-form-urlencoded'},
+            body:new URLSearchParams({client_id:OD_CLIENT_ID,grant_type:'authorization_code',code,redirect_uri:'https://registrosemanal.netlify.app/reportes',code_verifier:verifier,scope:OD_SCOPES})
           });
-
-          if(!tokenRes.ok){ const t=await tokenRes.text(); throw new Error('Token error: '+t); }
-          const tokens = await tokenRes.json();
-          _odToken = tokens.access_token;
-          if(tokens.refresh_token) sessionStorage.setItem('od_refresh', tokens.refresh_token);
-
-          // Get user info
-          const userRes = await fetch('https://graph.microsoft.com/v1.0/me', {
-            headers:{'Authorization':'Bearer '+_odToken}
-          });
-          const user = await userRes.json();
-          _odAccount = { name: user.displayName||user.userPrincipalName, username: user.userPrincipalName };
-
+          if(!tr.ok) throw new Error(await tr.text());
+          const tokens=await tr.json();
+          _odToken=tokens.access_token;
+          if(tokens.refresh_token) sessionStorage.setItem('od_refresh',tokens.refresh_token);
+          const userRes=await fetch('https://graph.microsoft.com/v1.0/me',{headers:{'Authorization':'Bearer '+_odToken}});
+          const user=await userRes.json();
+          _odAccount={name:user.displayName||user.userPrincipalName,username:user.userPrincipalName};
           odUpdateUI();
+          if(_pptFile) document.getElementById('pptUploadBtn').style.display='inline-flex';
           toast('OneDrive conectado ✓','success');
           resolve();
-        }catch(err){ clearInterval(interval); reject(err); }
-      }, 500);
+        }catch(err){ clearInterval(iv); reject(err); }
+      },500);
     });
-
   }catch(e){
-    console.error('OD login error:', e);
-    if(msgEl) msgEl.textContent = '⚠️ '+e.message;
+    console.error(e);
+    if(msgEl) msgEl.textContent='⚠️ '+e.message;
     toast('Error: '+e.message,'error');
   }
 }
@@ -2673,50 +2472,54 @@ async function odSignIn(){
 async function odSignOut(){
   _odAccount=null; _odToken=null;
   sessionStorage.removeItem('od_refresh');
-  sessionStorage.removeItem('od_pkce_verifier');
-  sessionStorage.removeItem('od_state');
   odUpdateUI();
-  pptResetDrop('od');
-  toast('Sesión Microsoft cerrada','success');
+  document.getElementById('pptUploadBtn').style.display='none';
+  toast('Sesión cerrada','success');
 }
 
 async function odEnsureToken(){
   if(_odToken) return _odToken;
-  // Try refresh token
-  const refresh = sessionStorage.getItem('od_refresh');
+  const refresh=sessionStorage.getItem('od_refresh');
   if(!refresh) return null;
   try{
-    const res = await fetch(`https://login.microsoftonline.com/${OD_TENANT}/oauth2/v2.0/token`,{
-      method:'POST',
-      headers:{'Content-Type':'application/x-www-form-urlencoded'},
-      body: new URLSearchParams({
-        client_id:     OD_CLIENT_ID,
-        grant_type:    'refresh_token',
-        refresh_token: refresh,
-        scope:         OD_SCOPES
-      })
+    const res=await fetch(`https://login.microsoftonline.com/${OD_TENANT}/oauth2/v2.0/token`,{
+      method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},
+      body:new URLSearchParams({client_id:OD_CLIENT_ID,grant_type:'refresh_token',refresh_token:refresh,scope:OD_SCOPES})
     });
     if(!res.ok) return null;
-    const t = await res.json();
-    _odToken = t.access_token;
-    if(t.refresh_token) sessionStorage.setItem('od_refresh', t.refresh_token);
+    const t=await res.json();
+    _odToken=t.access_token;
+    if(t.refresh_token) sessionStorage.setItem('od_refresh',t.refresh_token);
     return _odToken;
   }catch(e){ return null; }
 }
 
 function odUpdateUI(){
-  const authPane = document.getElementById('pptOdAuthPane');
-  const userPane = document.getElementById('pptOdUserPane');
+  const authPane=document.getElementById('pptOdAuthPane');
+  const userPane=document.getElementById('pptOdUserPane');
+  if(!authPane||!userPane) return;
   if(_odAccount){
-    authPane.style.display='none';
-    userPane.style.display='flex';
-    const nm = document.getElementById('pptOdUserName');
-    if(nm) nm.textContent = _odAccount.name||_odAccount.username||'Usuario Microsoft';
+    authPane.style.display='none'; userPane.style.display='flex';
+    const nm=document.getElementById('pptOdUserName');
+    if(nm) nm.textContent=_odAccount.name||_odAccount.username||'Usuario Microsoft';
+    // Try to restore token from session
+    if(!_odToken) odEnsureToken().then(t=>{ if(t && _pptFile) document.getElementById('pptUploadBtn').style.display='inline-flex'; });
   }else{
-    authPane.style.display='flex';
-    userPane.style.display='none';
+    // Try silent restore from refresh token
+    const refresh=sessionStorage.getItem('od_refresh');
+    if(refresh){
+      odEnsureToken().then(t=>{
+        if(t){
+          // We have a valid token but no account info yet — show as connected
+          _odAccount={name:'Microsoft', username:''};
+          odUpdateUI();
+        }
+      });
+    }
+    authPane.style.display='flex'; userPane.style.display='none';
   }
 }
+
 </script>
 
 <!-- Embed docx bundle from minutas (reuse same library) -->
