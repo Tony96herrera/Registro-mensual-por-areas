@@ -253,7 +253,7 @@ document.addEventListener('click',e=>{
   }
 });
 </script>
-<script src="https://alcdn.msauth.net/browser/2.38.3/js/msal-browser.min.js"></script>
+<!-- Microsoft OAuth2 PKCE - no external library needed -->
 </head>
 <body>
 
@@ -2187,10 +2187,9 @@ const OD_CLIENT_ID = '7e5e7715-62a2-4be6-8357-af133de8fb83';
 const OD_TENANT   = '7c4d239e-9534-4e05-bb0b-ce4e8c32814a';
 const OD_FOLDER    = 'Reportes Omnilife';
 
-let _pptTab         = 'fb';       // 'fb' | 'od'
+let _pptTab         = 'fb';
 let _pptPendingFile = null;
-let _pptTargetId    = null;       // ID del reporte activo
-let _msalApp        = null;
+let _pptTargetId    = null;
 let _odAccount      = null;
 let _odToken        = null;
 
@@ -2566,72 +2565,143 @@ function pptResetDrop(mode){
 }
 
 // ═══════════════════════════════════════════════════════
-//  ONEDRIVE AUTH (MSAL PKCE)
+//  ONEDRIVE AUTH — OAuth2 PKCE (sin librería externa)
 // ═══════════════════════════════════════════════════════
-async function odGetMsal(){
-  if(_msalApp) return _msalApp;
-  if(!window.msal) return null;
-  try{
-    const config = {
-      auth:{
-        clientId: OD_CLIENT_ID,
-        authority: `https://login.microsoftonline.com/${OD_TENANT}`,
-        redirectUri: 'https://registrosemanal.netlify.app/reportes'
-      },
-      cache:{ cacheLocation:'sessionStorage', storeAuthStateInCookie:false }
-    };
-    _msalApp = new msal.PublicClientApplication(config);
-    await _msalApp.initialize();
-    return _msalApp;
-  }catch(e){ console.error('MSAL init:',e); return null; }
+const OD_SCOPES = 'Files.ReadWrite User.Read offline_access';
+
+// ── PKCE helpers ─────────────────────────────────────────
+async function pkceChallenge(){
+  const verifier = Array.from(crypto.getRandomValues(new Uint8Array(32)))
+    .map(b=>b.toString(16).padStart(2,'0')).join('');
+  sessionStorage.setItem('od_pkce_verifier', verifier);
+  const data = new TextEncoder().encode(verifier);
+  const hash = await crypto.subtle.digest('SHA-256', data);
+  const challenge = btoa(String.fromCharCode(...new Uint8Array(hash)))
+    .replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+  return { verifier, challenge };
 }
 
+// ── Popup-based OAuth2 flow ───────────────────────────────
 async function odSignIn(){
-  const app = await odGetMsal();
   const msgEl = document.getElementById('pptOdAuthMsg');
-  if(!app){
-    if(msgEl) msgEl.textContent = '⚠️ Error al inicializar MSAL. Recarga la página.';
-    return;
-  }
   try{
-    if(msgEl) msgEl.textContent = 'Abriendo ventana de inicio de sesión...';
-    const result = await app.loginPopup({
-      scopes:['Files.ReadWrite','User.Read'],
-      prompt: 'select_account'
+    if(msgEl) msgEl.textContent = 'Abriendo ventana de Microsoft...';
+
+    const { verifier, challenge } = await pkceChallenge();
+    const state = Math.random().toString(36).slice(2);
+    sessionStorage.setItem('od_state', state);
+
+    const params = new URLSearchParams({
+      client_id:     OD_CLIENT_ID,
+      response_type: 'code',
+      redirect_uri:  'https://registrosemanal.netlify.app/reportes',
+      scope:         OD_SCOPES,
+      state,
+      code_challenge:        challenge,
+      code_challenge_method: 'S256',
+      prompt:        'select_account'
     });
-    _odAccount = result.account;
-    const tr = await app.acquireTokenSilent({ scopes:['Files.ReadWrite'], account:result.account });
-    _odToken = tr.accessToken;
-    odUpdateUI();
-    toast('Sesión de Microsoft iniciada ✓','success');
+
+    const authUrl = `https://login.microsoftonline.com/${OD_TENANT}/oauth2/v2.0/authorize?${params}`;
+
+    // Open popup
+    const popup = window.open(authUrl, 'msauth', 'width=500,height=650,left=400,top=100');
+    if(!popup){ throw new Error('El navegador bloqueó el popup. Permite popups para esta página.'); }
+
+    // Listen for redirect back
+    await new Promise((resolve, reject)=>{
+      const interval = setInterval(async()=>{
+        try{
+          if(popup.closed){ clearInterval(interval); reject(new Error('Ventana cerrada sin completar el login')); return; }
+          let href = '';
+          try{ href = popup.location.href; }catch(e){ return; } // cross-origin, wait
+          if(!href.includes('registrosemanal.netlify.app')) return;
+
+          clearInterval(interval);
+          popup.close();
+
+          const url = new URL(href);
+          const code  = url.searchParams.get('code');
+          const retState = url.searchParams.get('state');
+          const error = url.searchParams.get('error');
+
+          if(error) throw new Error(url.searchParams.get('error_description')||error);
+          if(retState !== sessionStorage.getItem('od_state')) throw new Error('State mismatch');
+          if(!code) throw new Error('No se recibió código de autorización');
+
+          // Exchange code for token
+          if(msgEl) msgEl.textContent = 'Obteniendo acceso...';
+          const tokenRes = await fetch(`https://login.microsoftonline.com/${OD_TENANT}/oauth2/v2.0/token`, {
+            method: 'POST',
+            headers: {'Content-Type':'application/x-www-form-urlencoded'},
+            body: new URLSearchParams({
+              client_id:     OD_CLIENT_ID,
+              grant_type:    'authorization_code',
+              code,
+              redirect_uri:  'https://registrosemanal.netlify.app/reportes',
+              code_verifier: verifier,
+              scope:         OD_SCOPES
+            })
+          });
+
+          if(!tokenRes.ok){ const t=await tokenRes.text(); throw new Error('Token error: '+t); }
+          const tokens = await tokenRes.json();
+          _odToken = tokens.access_token;
+          if(tokens.refresh_token) sessionStorage.setItem('od_refresh', tokens.refresh_token);
+
+          // Get user info
+          const userRes = await fetch('https://graph.microsoft.com/v1.0/me', {
+            headers:{'Authorization':'Bearer '+_odToken}
+          });
+          const user = await userRes.json();
+          _odAccount = { name: user.displayName||user.userPrincipalName, username: user.userPrincipalName };
+
+          odUpdateUI();
+          toast('OneDrive conectado ✓','success');
+          resolve();
+        }catch(err){ clearInterval(interval); reject(err); }
+      }, 500);
+    });
+
   }catch(e){
-    console.error(e);
-    if(msgEl) msgEl.textContent = 'Error: '+e.message;
-    toast('Error al iniciar sesión','error');
+    console.error('OD login error:', e);
+    if(msgEl) msgEl.textContent = '⚠️ '+e.message;
+    toast('Error: '+e.message,'error');
   }
 }
 
 async function odSignOut(){
-  const app = await odGetMsal();
-  if(app && _odAccount){ try{ await app.logoutPopup({account:_odAccount}); }catch(e){} }
   _odAccount=null; _odToken=null;
+  sessionStorage.removeItem('od_refresh');
+  sessionStorage.removeItem('od_pkce_verifier');
+  sessionStorage.removeItem('od_state');
   odUpdateUI();
   pptResetDrop('od');
   toast('Sesión Microsoft cerrada','success');
 }
 
 async function odEnsureToken(){
-  const app = await odGetMsal();
-  if(!app || !_odAccount) return _odToken;
+  if(_odToken) return _odToken;
+  // Try refresh token
+  const refresh = sessionStorage.getItem('od_refresh');
+  if(!refresh) return null;
   try{
-    const r = await app.acquireTokenSilent({ scopes:['Files.ReadWrite'], account:_odAccount });
-    _odToken = r.accessToken; return _odToken;
-  }catch(e){
-    try{
-      const r = await app.acquireTokenPopup({ scopes:['Files.ReadWrite'], account:_odAccount });
-      _odToken = r.accessToken; return _odToken;
-    }catch(e2){ return null; }
-  }
+    const res = await fetch(`https://login.microsoftonline.com/${OD_TENANT}/oauth2/v2.0/token`,{
+      method:'POST',
+      headers:{'Content-Type':'application/x-www-form-urlencoded'},
+      body: new URLSearchParams({
+        client_id:     OD_CLIENT_ID,
+        grant_type:    'refresh_token',
+        refresh_token: refresh,
+        scope:         OD_SCOPES
+      })
+    });
+    if(!res.ok) return null;
+    const t = await res.json();
+    _odToken = t.access_token;
+    if(t.refresh_token) sessionStorage.setItem('od_refresh', t.refresh_token);
+    return _odToken;
+  }catch(e){ return null; }
 }
 
 function odUpdateUI(){
