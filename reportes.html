@@ -433,13 +433,7 @@ document.addEventListener('click',e=>{
             <div style="font-size:14px;font-weight:600;color:var(--t1)">Conectar con Google Drive</div>
             <div style="font-size:12px;color:var(--t3);margin-top:3px">Inicia sesión con tu Gmail para subir el archivo</div>
           </div>
-          <button class="od-sign-btn" style="background:#4285f4" onclick="
-            sessionStorage.setItem('gd_return','modal');
-            sessionStorage.setItem('gd_modal_area', document.getElementById('mArea').value||'');
-            sessionStorage.setItem('gd_modal_mes', document.getElementById('mMes').value||'');
-            sessionStorage.setItem('gd_modal_anio', document.getElementById('mAnio').value||'');
-            sessionStorage.setItem('gd_modal_autor', document.getElementById('mAutor').value||'');
-            odSignIn();">
+          <button class="od-sign-btn" style="background:#4285f4" onclick="odSignIn()">
             <svg width="16" height="16" viewBox="0 0 24 24"><path fill="#fff" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#fff" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#fff" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/><path fill="#fff" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
             Iniciar sesión con Google
           </button>
@@ -2182,17 +2176,13 @@ window.addEventListener('load',()=>{
   try{
     const saved = sessionStorage.getItem('gd_account');
     if(saved) _gdAccount = JSON.parse(saved);
-    // Try to restore token silently
     if(_gdAccount) gdEnsureToken().then(t=>{ if(t) _gdToken=t; });
   }catch(e){}
-  // Handle OAuth redirect
-  gdHandleRedirect().then(()=>{
-    renderSidebar();
-    setTimeout(()=>{
-      if(window._fe) fbLoad().then(()=>autoCleanupOldImages());
-      else autoCleanupOldImages();
-    },400);
-  });
+  renderSidebar();
+  setTimeout(()=>{
+    if(window._fe) fbLoad().then(()=>autoCleanupOldImages());
+    else autoCleanupOldImages();
+  },400);
 });
 
 // Runs automatically on load — deletes Storage images from reports older than 3 months
@@ -2538,7 +2528,7 @@ async function odSignIn(){
     const { challenge } = await pkceChallenge();
     const state = Math.random().toString(36).slice(2);
     sessionStorage.setItem('gd_state', state);
-    sessionStorage.setItem('gd_return', 'ppt');
+
     const params = new URLSearchParams({
       client_id:     GD_CLIENT_ID,
       redirect_uri:  GD_REDIRECT,
@@ -2550,8 +2540,70 @@ async function odSignIn(){
       access_type:   'offline',
       prompt:        'consent'
     });
-    window.location.href = `https://accounts.google.com/o/oauth2/v2/auth?${params}`;
-  }catch(e){ toast('Error: '+e.message,'error'); }
+
+    const popup = window.open(
+      `https://accounts.google.com/o/oauth2/v2/auth?${params}`,
+      'gdauth',
+      'width=500,height=650,left='+Math.round((screen.width-500)/2)+',top='+Math.round((screen.height-650)/2)
+    );
+
+    if(!popup){ toast('Popup bloqueado. Permite popups para esta página.','error'); return; }
+
+    // Poll until popup reaches our redirect URI, then grab the code
+    const msgEl = document.getElementById('pptOdAuthMsg') || document.getElementById('pptInlineAuthPane');
+    await new Promise((resolve, reject) => {
+      const timer = setInterval(async () => {
+        try {
+          if(popup.closed){ clearInterval(timer); reject(new Error('Ventana cerrada')); return; }
+          let href = '';
+          try { href = popup.location.href; } catch(e) { return; } // cross-origin, keep waiting
+          if(!href.includes('registrosemanal.netlify.app')) return;
+
+          clearInterval(timer);
+          const url = new URL(href);
+          popup.close();
+
+          const code  = url.searchParams.get('code');
+          const error = url.searchParams.get('error');
+          if(error) throw new Error(url.searchParams.get('error_description')||error);
+          if(url.searchParams.get('state') !== sessionStorage.getItem('gd_state')) throw new Error('State mismatch');
+          if(!code) throw new Error('No se recibió código');
+
+          const verifier = sessionStorage.getItem('gd_pkce_verifier');
+          const tr = await fetch('https://oauth2.googleapis.com/token', {
+            method: 'POST',
+            headers: {'Content-Type':'application/x-www-form-urlencoded'},
+            body: new URLSearchParams({
+              code, client_id: GD_CLIENT_ID,
+              client_secret: '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',
+              redirect_uri: GD_REDIRECT,
+              grant_type: 'authorization_code',
+              code_verifier: verifier
+            })
+          });
+          if(!tr.ok) throw new Error(await tr.text());
+          const tokens = await tr.json();
+          _gdToken = tokens.access_token;
+          if(tokens.refresh_token) sessionStorage.setItem('gd_refresh', tokens.refresh_token);
+
+          const userRes = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
+            headers:{'Authorization':'Bearer '+_gdToken}
+          });
+          const user = await userRes.json();
+          _gdAccount = { name: user.name||user.email, email: user.email };
+          sessionStorage.setItem('gd_account', JSON.stringify(_gdAccount));
+
+          gdUpdateUI();
+          pptInlineUpdateUI();
+          toast('Google Drive conectado ✓','success');
+          resolve();
+        } catch(err) { clearInterval(timer); reject(err); }
+      }, 500);
+    });
+  } catch(e) {
+    console.error(e);
+    toast('Error: '+e.message,'error');
+  }
 }
 
 async function gdHandleRedirect(){
