@@ -268,10 +268,6 @@ document.addEventListener('click',e=>{
   </div>
   <!-- RIGHT: action buttons + burger -->
   <div style="display:flex;align-items:center;gap:8px;flex-shrink:0">
-    <button class="btn bghost bsm" id="hdrPptBtn" onclick="openPptModal()" style="flex-shrink:0">
-      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
-      <span id="hdrPptLabel">PowerPoint</span>
-    </button>
     <button class="btn bghost bsm" onclick="openImport()" style="flex-shrink:0">
       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
       Importar Word
@@ -378,6 +374,10 @@ document.addEventListener('click',e=>{
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
             Texto libre
           </button>
+          <button class="tab-btn" id="tab-diapositiva" onclick="switchTab('diapositiva')">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+            Diapositiva
+          </button>
         </div>
       </div>
 
@@ -388,8 +388,6 @@ document.addEventListener('click',e=>{
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
           Añadir sección
         </button>
-
-        <!-- Imágenes generales (sin sección) -->
         <div class="field">
           <label>Imágenes generales <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--t3)">(sin sección específica)</span></label>
           <div class="global-img-zone" id="zone_general"
@@ -426,8 +424,48 @@ document.addEventListener('click',e=>{
         </div>
       </div>
 
+      <!-- TAB: DIAPOSITIVA -->
+      <div id="pane-diapositiva" style="display:none;flex-direction:column;gap:12px;padding-top:4px">
+        <p style="font-size:13px;color:var(--t2);line-height:1.6;margin:0">Sube el archivo <strong>.pptx</strong> o <strong>.pdf</strong> del reporte. Se guardará en Google Drive y se mostrará directamente en la página.</p>
+        <!-- Auth: no logado -->
+        <div id="pptInlineAuthPane" style="display:flex;flex-direction:column;align-items:center;gap:10px;padding:16px;border:1px solid var(--b2);border-radius:var(--rs);background:var(--s2)">
+          <div style="text-align:center">
+            <div style="font-size:14px;font-weight:600;color:var(--t1)">Conectar con Google Drive</div>
+            <div style="font-size:12px;color:var(--t3);margin-top:3px">Inicia sesión con tu Gmail para subir el archivo</div>
+          </div>
+          <button class="od-sign-btn" style="background:#4285f4" onclick="odSignIn();sessionStorage.setItem('gd_return','modal')">
+            <svg width="16" height="16" viewBox="0 0 24 24"><path fill="#fff" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#fff" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#fff" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/><path fill="#fff" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+            Iniciar sesión con Google
+          </button>
+        </div>
+        <!-- Auth: logado -->
+        <div id="pptInlineUserPane" style="display:none;flex-direction:column;gap:10px">
+          <div class="od-user-pill">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#4285f4" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+            <span style="font-size:12px;color:#4285f4;font-weight:600;flex:1" id="pptInlineUserName"></span>
+            <button onclick="odSignOut();pptInlineUpdateUI()" style="font-size:11px;padding:2px 8px;background:transparent;border:1px solid var(--b2);border-radius:4px;color:var(--t3);cursor:pointer">Cerrar sesión</button>
+          </div>
+          <div class="ppt-drop od-mode" id="pptInlineDrop"
+            onclick="document.getElementById('pptInlineInput').click()"
+            ondragover="event.preventDefault();this.classList.add('over')"
+            ondragleave="this.classList.remove('over')"
+            ondrop="event.preventDefault();this.classList.remove('over');pptInlineFileSelect(event.dataTransfer.files[0])">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="opacity:.35"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/><path d="M12 16v-6"/><path d="M9 13l3-3 3 3"/></svg>
+            <div style="font-size:13px;color:var(--t2)">Arrastra tu archivo aquí o <span style="color:#4285f4;font-weight:600">haz clic</span></div>
+            <div id="pptInlineDropLabel" style="font-size:12px;color:var(--t3)">Archivos .pptx, .ppt o .pdf</div>
+          </div>
+          <input type="file" id="pptInlineInput" accept=".pptx,.ppt,.pdf" style="display:none" onchange="pptInlineFileSelect(this.files[0])">
+          <div id="pptInlineProgress" style="display:none;flex-direction:column;gap:4px">
+            <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--t3)">
+              <span id="pptInlineProgLabel">Subiendo a Google Drive...</span>
+              <span id="pptInlineProgPct">0%</span>
+            </div>
+            <div class="ppt-prog"><div class="ppt-prog-bar od" id="pptInlineProgBar" style="width:0%"></div></div>
+          </div>
+        </div>
+      </div>
+
       <div class="upload-progress" id="uploadProgress" style="display:none"><div class="upload-progress-bar" id="uploadBar" style="width:0%"></div></div>
-    </div>
     <div class="mfoot">
       <button class="btn bghost" onclick="closeModal()">Cancelar</button>
       <button class="btn bprim" onclick="saveReporte()">
@@ -556,36 +594,60 @@ document.addEventListener('click',e=>{
   </div>
 </div>
 
-<!-- MODAL POWERPOINT -->
+<!-- MODAL AÑADIR DIAPOSITIVA -->
 <div class="bd" id="bdPpt" onmousedown="bdMD(event,'bdPpt')" onmouseup="bdMU(event,'bdPpt')">
-  <div class="modal" style="max-width:520px">
+  <div class="modal" style="max-width:540px">
     <div class="mh">
       <div style="display:flex;align-items:center;gap:10px">
-        <div style="width:26px;height:26px;background:#c43e1c;border-radius:6px;display:flex;align-items:center;justify-content:center;flex-shrink:0">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="8" y1="8" x2="16" y2="8"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="8" y1="16" x2="12" y2="16"/></svg>
+        <div style="width:26px;height:26px;background:#4285f4;border-radius:6px;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
         </div>
-        <div class="mt">Subir PowerPoint</div>
+        <div class="mt">Añadir diapositiva</div>
       </div>
       <button class="mx" onclick="closePptModal()">×</button>
     </div>
-    <div class="mbody" style="gap:16px">
+    <div class="mbody" style="gap:14px">
 
-      <!-- Paso 1: Área -->
-      <div class="field">
-        <label>¿De qué área es el reporte?</label>
-        <select id="pptArea" onchange="pptAreaChange()" style="width:100%;background:var(--s2);border:1px solid var(--b2);border-radius:var(--rs);color:var(--t1);font-family:'DM Sans',sans-serif;font-size:13px;padding:8px 10px;outline:none;cursor:pointer;appearance:none;background-image:url('data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2211%22 height=%2211%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%23666%22 stroke-width=%222%22%3E%3Cpolyline points=%226 9 12 15 18 9%22/%3E%3C/svg%3E');background-repeat:no-repeat;background-position:right 9px center">
-          <option value="">— Selecciona un área —</option>
-          <option>CEDIS</option><option>CREO</option><option>ATN</option>
-          <option>MKT</option><option>ALMACÉN</option><option>SISTEMAS</option>
-        </select>
+      <!-- Fila área + mes -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div class="field">
+          <label>Área</label>
+          <select id="pptArea" onchange="pptAreaChange()" style="width:100%;background:var(--s2);border:1px solid var(--b2);border-radius:var(--rs);color:var(--t1);font-family:'DM Sans',sans-serif;font-size:13px;padding:8px 10px;outline:none;cursor:pointer;appearance:none;background-image:url('data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2211%22 height=%2211%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%23666%22 stroke-width=%222%22%3E%3Cpolyline points=%226 9 12 15 18 9%22/%3E%3C/svg%3E');background-repeat:no-repeat;background-position:right 9px center">
+            <option value="">— Área —</option>
+            <option>CEDIS</option><option>CREO</option><option>ATN</option>
+            <option>MKT</option><option>ALMACÉN</option><option>SISTEMAS</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Mes</label>
+          <select id="pptMes" onchange="pptMetaChange()" style="width:100%;background:var(--s2);border:1px solid var(--b2);border-radius:var(--rs);color:var(--t1);font-family:'DM Sans',sans-serif;font-size:13px;padding:8px 10px;outline:none;cursor:pointer;appearance:none;background-image:url('data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2211%22 height=%2211%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%23666%22 stroke-width=%222%22%3E%3Cpolyline points=%226 9 12 15 18 9%22/%3E%3C/svg%3E');background-repeat:no-repeat;background-position:right 9px center">
+            <option value="">— Mes —</option>
+            <option>Enero</option><option>Febrero</option><option>Marzo</option><option>Abril</option>
+            <option>Mayo</option><option>Junio</option><option>Julio</option><option>Agosto</option>
+            <option>Septiembre</option><option>Octubre</option><option>Noviembre</option><option>Diciembre</option>
+          </select>
+        </div>
       </div>
 
-      <!-- Mes/año auto (informativo) -->
-      <div id="pptMesInfo" style="display:none;font-size:13px;color:var(--t2);background:var(--s2);border:1px solid var(--b1);border-radius:var(--rs);padding:10px 14px;display:none">
+      <!-- Fila año + autor -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div class="field">
+          <label>Año</label>
+          <select id="pptAnio" onchange="pptMetaChange()" style="width:100%;background:var(--s2);border:1px solid var(--b2);border-radius:var(--rs);color:var(--t1);font-family:'DM Sans',sans-serif;font-size:13px;padding:8px 10px;outline:none;cursor:pointer;appearance:none;background-image:url('data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2211%22 height=%2211%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%23666%22 stroke-width=%222%22%3E%3Cpolyline points=%226 9 12 15 18 9%22/%3E%3C/svg%3E');background-repeat:no-repeat;background-position:right 9px center">
+          </select>
+        </div>
+        <div class="field">
+          <label>Responsable</label>
+          <input id="pptAutor" type="text" placeholder="Nombre del responsable" style="width:100%;background:var(--s2);border:1px solid var(--b2);border-radius:var(--rs);color:var(--t1);font-family:'DM Sans',sans-serif;font-size:13px;padding:8px 10px;outline:none;box-sizing:border-box">
+        </div>
+      </div>
+
+      <!-- Info reporte destino -->
+      <div id="pptMesInfo" style="display:none;font-size:13px;color:var(--t2);background:var(--s2);border:1px solid var(--b1);border-radius:var(--rs);padding:10px 14px">
         📅 Se adjuntará al reporte de <strong id="pptMesInfoTxt"></strong>
       </div>
 
-      <!-- Zona de subida OneDrive -->
+      <!-- Zona de subida Google Drive -->
       <div id="pptOdSection" style="display:none;flex-direction:column;gap:10px">
 
         <!-- No logado -->
@@ -604,23 +666,21 @@ document.addEventListener('click',e=>{
         <!-- Logado -->
         <div id="pptOdUserPane" style="display:none;flex-direction:column;gap:10px">
           <div class="od-user-pill">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#0078d4" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#4285f4" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
             <span class="od-user-name" id="pptOdUserName"></span>
             <button onclick="odSignOut()" style="font-size:11px;padding:2px 8px;background:transparent;border:1px solid var(--b2);border-radius:4px;color:var(--t3);cursor:pointer">Cerrar sesión</button>
           </div>
-
           <div class="ppt-drop od-mode" id="pptDropOd"
             onclick="document.getElementById('pptInputOd').click()"
             ondragover="pptDoDragOver(event)" ondragleave="pptDoDragLeave(event)" ondrop="pptDoDrop(event)">
             <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="opacity:.35"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/><path d="M12 16v-6"/><path d="M9 13l3-3 3 3"/></svg>
             <div style="font-size:13px;color:var(--t2)">Arrastra tu <strong>.pptx</strong> o <strong>.pdf</strong> aquí o <span style="color:#4285f4;font-weight:600">haz clic</span></div>
-            <div id="pptDropOdFile" style="font-size:12px;color:var(--t3)">El archivo se guardará en OneDrive → carpeta <em>Reportes Omnilife</em></div>
+            <div id="pptDropOdFile" style="font-size:12px;color:var(--t3)">El archivo se guardará en Google Drive → carpeta <em>Reportes Omnilife</em></div>
           </div>
           <input type="file" id="pptInputOd" accept=".pptx,.ppt,.pdf" style="display:none" onchange="pptOdFileSelect(this.files[0])">
-
           <div id="pptProgOd" style="display:none;flex-direction:column;gap:4px">
             <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--t3)">
-              <span id="pptProgOdLabel">Subiendo a OneDrive...</span>
+              <span id="pptProgOdLabel">Subiendo a Google Drive...</span>
               <span id="pptProgOdPct">0%</span>
             </div>
             <div class="ppt-prog"><div class="ppt-prog-bar od" id="pptProgOdBar" style="width:0%"></div></div>
@@ -628,9 +688,9 @@ document.addEventListener('click',e=>{
         </div>
       </div>
 
-      <!-- PPTs ya subidos para esta área/mes -->
+      <!-- Diapositivas ya subidas -->
       <div id="pptExisting" style="display:none">
-        <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;color:var(--t3);margin-bottom:8px">Ya adjuntos este mes</div>
+        <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;color:var(--t3);margin-bottom:8px">Ya subidas este mes</div>
         <div id="pptExistingList"></div>
       </div>
 
@@ -881,10 +941,13 @@ function renderSecciones(){
 let activeTab = 'secciones'; // 'secciones' | 'libre'
 function switchTab(tab){
   activeTab = tab;
-  document.getElementById('pane-secciones').style.display = tab==='secciones' ? '' : 'none';
-  document.getElementById('pane-libre').style.display      = tab==='libre'     ? 'flex' : 'none';
-  document.getElementById('tab-sec').classList.toggle('active',   tab==='secciones');
-  document.getElementById('tab-libre').classList.toggle('active', tab==='libre');
+  document.getElementById('pane-secciones').style.display   = tab==='secciones'   ? ''     : 'none';
+  document.getElementById('pane-libre').style.display        = tab==='libre'        ? 'flex' : 'none';
+  document.getElementById('pane-diapositiva').style.display  = tab==='diapositiva'  ? 'flex' : 'none';
+  document.getElementById('tab-sec').classList.toggle('active',         tab==='secciones');
+  document.getElementById('tab-libre').classList.toggle('active',       tab==='libre');
+  document.getElementById('tab-diapositiva').classList.toggle('active', tab==='diapositiva');
+  if(tab==='diapositiva') pptInlineUpdateUI();
 }
 
 function addSeccion(label='', text=''){
@@ -1221,17 +1284,7 @@ function renderView(id){
 
     <div style="height:40px"></div>
   </div>`;
-
-  // Update header PPT button
-  const hdrBtn = document.getElementById('hdrPptBtn');
-  const hdrLbl = document.getElementById('hdrPptLabel');
-  if(hdrBtn){
-    hdrBtn.style.display = '';
-    const cnt = (r.presentaciones||[]).length;
-    hdrLbl.textContent = cnt ? `PPT (${cnt})` : 'Adjuntar PPT';
-  }
 }
-
 
 // ── Populate a year <select> and set default to current year ──
 function populateYearSel(selId, defaultYear){
@@ -1383,16 +1436,24 @@ async function saveReporte(){
     imagenes_libre: [...(editId ? (reportes.find(r=>r.id===editId)?.imagenes_libre||[]) : []), ...(uploadedPerSec['libre']||[])],
   };
 
+  // Upload inline PPT if selected
+  let presentaciones = editId ? (reportes.find(r=>r.id===editId)?.presentaciones||[]) : [];
+  if(_pptInlineFile){
+    const pptRef = await pptInlineUpload(area, mes, anio, document.getElementById('mAutor').value.trim());
+    if(pptRef) presentaciones = [...presentaciones, pptRef];
+    _pptInlineFile = null;
+  }
+
   if(editId){
     const idx=reportes.findIndex(r=>r.id===editId);
-    if(idx!==-1) reportes[idx]={...reportes[idx],...data};
-    await fbUp(editId,data);
+    if(idx!==-1) reportes[idx]={...reportes[idx],...data, presentaciones};
+    await fbUp(editId,{...data, presentaciones});
     activeId=editId;
     toast('Reporte actualizado ✓','success');
   } else {
     const tmp='loc_'+Date.now();
-    const rec={id:tmp,...data,createdAt:new Date().toISOString()};
-    const fbId=await fbAdd(data);
+    const rec={id:tmp,...data, presentaciones, createdAt:new Date().toISOString()};
+    const fbId=await fbAdd({...data, presentaciones});
     if(fbId) rec.id=fbId;
     reportes.unshift(rec);
     activeId=rec.id;
@@ -1404,6 +1465,12 @@ async function saveReporte(){
   closeModal();
   renderSidebar();
   renderView(activeId);
+  // Reset inline PPT UI
+  _pptInlineFile = null;
+  const inlineDrop = document.getElementById('pptInlineDrop');
+  if(inlineDrop) inlineDrop.classList.remove('has-file');
+  const inlineLbl = document.getElementById('pptInlineDropLabel');
+  if(inlineLbl) inlineLbl.textContent = 'Archivos .pptx, .ppt o .pdf';
 }
 
 // ═══════════════════════════════════
@@ -2188,8 +2255,28 @@ let _pptAreaSel = null;
 function openPptModal(){
   _pptFile = null;
   _pptAreaSel = null;
+  const now = new Date();
+
+  // Reset fields
   const areaEl = document.getElementById('pptArea');
+  const mesEl  = document.getElementById('pptMes');
+  const anioEl = document.getElementById('pptAnio');
+  const autorEl = document.getElementById('pptAutor');
   if(areaEl) areaEl.value = '';
+  if(mesEl)  mesEl.value = MONTHS[now.getMonth()];
+  if(autorEl) autorEl.value = _gdAccount?.name || '';
+
+  // Populate year selector (current year ± 1)
+  if(anioEl){
+    anioEl.innerHTML = '';
+    [now.getFullYear()-1, now.getFullYear(), now.getFullYear()+1].forEach(y=>{
+      const o = document.createElement('option');
+      o.value = y; o.textContent = y;
+      if(y === now.getFullYear()) o.selected = true;
+      anioEl.appendChild(o);
+    });
+  }
+
   document.getElementById('pptMesInfo').style.display = 'none';
   document.getElementById('pptOdSection').style.display = 'none';
   document.getElementById('pptUploadBtn').style.display = 'none';
@@ -2203,9 +2290,12 @@ function openPptModal(){
 }
 function closePptModal(){ document.getElementById('bdPpt').classList.remove('open'); }
 
-// ── Area selected ─────────────────────────────────────
+function pptMetaChange(){ pptAreaChange(); }
+
 function pptAreaChange(){
-  const area = document.getElementById('pptArea').value;
+  const area  = document.getElementById('pptArea').value;
+  const mes   = document.getElementById('pptMes')?.value || MONTHS[new Date().getMonth()];
+  const anio  = document.getElementById('pptAnio')?.value || new Date().getFullYear();
   _pptAreaSel = area || null;
   _pptFile = null;
   document.getElementById('pptUploadBtn').style.display = 'none';
@@ -2219,9 +2309,7 @@ function pptAreaChange(){
     document.getElementById('pptExisting').style.display = 'none';
     return;
   }
-  const now = new Date();
-  const mes = MONTHS[now.getMonth()];
-  const anio = now.getFullYear();
+
   document.getElementById('pptMesInfoTxt').textContent = `${area} — ${mes} ${anio}`;
   document.getElementById('pptMesInfo').style.display = '';
   document.getElementById('pptOdSection').style.display = 'flex';
@@ -2302,9 +2390,9 @@ async function pptDoUpload(){
   if(!_pptAreaSel){ toast('Selecciona un área primero','error'); return; }
   if(!_gdToken){ toast('Inicia sesión con Google primero','error'); return; }
 
-  const now  = new Date();
-  const mes  = MONTHS[now.getMonth()];
-  const anio = now.getFullYear();
+  const mes   = document.getElementById('pptMes')?.value  || MONTHS[new Date().getMonth()];
+  const anio  = parseInt(document.getElementById('pptAnio')?.value) || new Date().getFullYear();
+  const autor = document.getElementById('pptAutor')?.value.trim() || _gdAccount?.name || '';
   const btn  = document.getElementById('pptUploadBtn');
   btn.disabled = true;
   pptSetOdProgress(5, 'Buscando carpeta en Drive...');
@@ -2371,7 +2459,7 @@ async function pptDoUpload(){
         area: _pptAreaSel,
         mes,
         anio,
-        autor: _gdAccount?.name || '',
+        autor: autor || _gdAccount?.name || '',
         presentaciones: [pptRef],
         createdAt: new Date().toISOString(),
         highlights: [], kpis: [], imagenes: [], comentarios: ''
@@ -2399,8 +2487,6 @@ async function pptDoUpload(){
     document.getElementById('pptDropOdFile').textContent = 'El archivo se guardará en Google Drive → carpeta Reportes Omnilife';
     document.getElementById('pptUploadBtn').style.display = 'none';
     pptShowExisting(_pptAreaSel, mes, anio);
-
-  }catch(e){
     console.error(e);
     toast('Error: '+e.message,'error');
     pptSetOdProgress(null);
@@ -2508,10 +2594,14 @@ async function gdHandleRedirect(){
     sessionStorage.setItem('gd_account', JSON.stringify(_gdAccount));
 
     gdUpdateUI();
+    pptInlineUpdateUI();
     toast('Google Drive conectado ✓','success');
     if(sessionStorage.getItem('gd_return')==='ppt'){
       sessionStorage.removeItem('gd_return');
       setTimeout(()=>openPptModal(), 400);
+    } else if(sessionStorage.getItem('gd_return')==='modal'){
+      sessionStorage.removeItem('gd_return');
+      setTimeout(()=>{ openModal(); togglePptSection(); }, 400);
     }
   }catch(e){
     console.error(e);
@@ -2567,7 +2657,93 @@ function gdUpdateUI(){
 }
 
 // alias so existing HTML calls work
-function odUpdateUI(){ gdUpdateUI(); }
+function odUpdateUI(){ gdUpdateUI(); pptInlineUpdateUI(); }
+
+// ── Inline PPT section (inside Nuevo Reporte modal) ──
+let _pptInlineFile = null;
+
+function togglePptSection(){
+  const sec = document.getElementById('pptInlineSection');
+  const btn = document.getElementById('pptSectionToggle');
+  const visible = sec.style.display !== 'none';
+  sec.style.display = visible ? 'none' : 'flex';
+  btn.textContent = visible ? '+ Añadir' : '− Ocultar';
+  if(!visible) pptInlineUpdateUI();
+}
+
+function pptInlineUpdateUI(){
+  const authPane = document.getElementById('pptInlineAuthPane');
+  const userPane = document.getElementById('pptInlineUserPane');
+  if(!authPane || !userPane) return;
+  if(_gdAccount){
+    authPane.style.display = 'none';
+    userPane.style.display = 'flex';
+    const nm = document.getElementById('pptInlineUserName');
+    if(nm) nm.textContent = _gdAccount.name || _gdAccount.email || 'Google';
+  } else {
+    authPane.style.display = 'flex';
+    userPane.style.display = 'none';
+  }
+}
+
+function pptInlineFileSelect(file){
+  if(!file) return;
+  if(!file.name.match(/\.pptx?$|\.pdf$/i)){ toast('Solo .pptx o .pdf','error'); return; }
+  _pptInlineFile = file;
+  const drop = document.getElementById('pptInlineDrop');
+  const lbl  = document.getElementById('pptInlineDropLabel');
+  if(drop) drop.classList.add('has-file');
+  if(lbl)  lbl.textContent = `✓ ${file.name} (${(file.size/1024/1024).toFixed(1)} MB)`;
+}
+
+async function pptInlineUpload(area, mes, anio, autor){
+  if(!_pptInlineFile) return null;
+  if(!_gdToken){ toast('Inicia sesión con Google para subir la diapositiva','error'); return null; }
+  const progWrap = document.getElementById('pptInlineProgress');
+  const bar = document.getElementById('pptInlineProgBar');
+  const lbl = document.getElementById('pptInlineProgLabel');
+  const pct = document.getElementById('pptInlineProgPct');
+  progWrap.style.display = 'flex';
+  const setP = (p,l) => { bar.style.width=p+'%'; lbl.textContent=l; pct.textContent=p+'%'; };
+  try{
+    setP(5,'Buscando carpeta...');
+    const folderId = await gdGetOrCreateFolder();
+    setP(20,'Subiendo archivo...');
+    const safeArea = area.replace(/[^a-zA-Z0-9]/g,'_');
+    const fileName = `${safeArea}_${mes}_${anio}_${_pptInlineFile.name}`;
+    const metadata = { name: fileName, parents: [folderId] };
+    const form = new FormData();
+    form.append('metadata', new Blob([JSON.stringify(metadata)],{type:'application/json'}));
+    form.append('file', _pptInlineFile);
+    const uploadRes = await fetch(
+      'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,name,webViewLink,size,mimeType',
+      {method:'POST', headers:{'Authorization':'Bearer '+_gdToken}, body:form}
+    );
+    if(!uploadRes.ok){ const t=await uploadRes.text(); throw new Error(t); }
+    const uploaded = await uploadRes.json();
+    setP(75,'Generando enlace...');
+    await fetch(`https://www.googleapis.com/drive/v3/files/${uploaded.id}/permissions`,{
+      method:'POST',
+      headers:{'Authorization':'Bearer '+_gdToken,'Content-Type':'application/json'},
+      body: JSON.stringify({role:'reader',type:'anyone'})
+    });
+    setP(100,'¡Listo!');
+    return {
+      name: _pptInlineFile.name,
+      source: 'googledrive',
+      shareUrl: `https://drive.google.com/file/d/${uploaded.id}/view`,
+      downloadUrl: `https://drive.google.com/uc?export=download&id=${uploaded.id}`,
+      embedUrl: `https://drive.google.com/file/d/${uploaded.id}/preview`,
+      driveFileId: uploaded.id,
+      size: _pptInlineFile.size,
+      uploadedAt: new Date().toISOString()
+    };
+  }catch(e){
+    toast('Error al subir diapositiva: '+e.message,'error');
+    progWrap.style.display='none';
+    return null;
+  }
+}
 
 // ── Presentation navigation ───────────────────────────
 const _pptSlide = {}; // track current slide per frame index
