@@ -1175,7 +1175,10 @@ function renderView(id){
       ${(r.presentaciones||[]).map((f,i)=>{
         const fileId = f.driveFileId;
         const isPdf = f.name && f.name.toLowerCase().endsWith('.pdf');
-        const embedUrl = f.embedUrl || (fileId ? `https://drive.google.com/file/d/${fileId}/preview` : null);
+        // Always use Drive preview — shows scroll, page number and zoom controls
+        const embedUrl = fileId
+          ? `https://drive.google.com/file/d/${fileId}/preview`
+          : f.embedUrl || null;
         return `
         <div style="margin-bottom:24px">
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap;gap:8px">
