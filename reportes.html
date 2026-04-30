@@ -2321,9 +2321,8 @@ async function pptDoUpload(){
 
     const metadata = {
       name: fileName,
-      parents: [folderId],
-      // Convert PPTX to Google Slides so it can be embedded
-      ...(isPdf ? {} : { mimeType: 'application/vnd.google-apps.presentation' })
+      parents: [folderId]
+      // No conversion — keep original format for Drive preview viewer
     };
     const form = new FormData();
     form.append('metadata', new Blob([JSON.stringify(metadata)], {type:'application/json'}));
@@ -2344,13 +2343,12 @@ async function pptDoUpload(){
       body: JSON.stringify({role:'reader', type:'anyone'})
     });
 
-    // 4. Build embed URL based on type
     const isSlides = uploaded.mimeType === 'application/vnd.google-apps.presentation';
-    const shareUrl = `https://drive.google.com/file/d/${uploaded.id}/view`;
+    const shareUrl = isSlides
+      ? `https://docs.google.com/presentation/d/${uploaded.id}/view`
+      : `https://drive.google.com/file/d/${uploaded.id}/view`;
     const downloadUrl = `https://drive.google.com/uc?export=download&id=${uploaded.id}`;
-    const embedUrl = isSlides
-      ? `https://docs.google.com/presentation/d/${uploaded.id}/embed?start=false&loop=false&delayms=5000`
-      : `https://drive.google.com/file/d/${uploaded.id}/preview`; // PDF
+    const embedUrl = `https://drive.google.com/file/d/${uploaded.id}/preview`;
     pptSetOdProgress(90, 'Guardando referencia...');
 
     const pptRef = {
