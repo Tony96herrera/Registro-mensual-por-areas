@@ -1175,10 +1175,7 @@ function renderView(id){
       ${(r.presentaciones||[]).map((f,i)=>{
         const fileId = f.driveFileId;
         const isPdf = f.name && f.name.toLowerCase().endsWith('.pdf');
-        // Use Google Docs viewer — works for PPTX and PDF without sign-in
-        const embedUrl = fileId
-          ? `https://docs.google.com/viewer?srcid=${fileId}&pid=explorer&efh=false&a=v&chrome=false&embedded=true`
-          : null;
+        const embedUrl = f.embedUrl || (fileId ? `https://drive.google.com/file/d/${fileId}/preview` : null);
         return `
         <div style="margin-bottom:24px">
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap;gap:8px">
@@ -1203,9 +1200,10 @@ function renderView(id){
             </div>
           </div>
           ${embedUrl ? `
-          <div style="position:relative;width:100%;padding-bottom:56.25%;background:var(--s2);border:1px solid var(--b1);border-radius:var(--r);overflow:hidden">
+          <div style="position:relative;width:100%;background:var(--s2);border:1px solid var(--b1);border-radius:var(--r);overflow:hidden">
             <iframe src="${embedUrl}"
-              style="position:absolute;top:0;left:0;width:100%;height:100%;border:none"
+              id="pptFrame_${i}"
+              style="width:100%;height:520px;border:none;display:block"
               allowfullscreen
               loading="lazy"
               title="${esc(f.name)}">
@@ -2313,16 +2311,23 @@ async function pptDoUpload(){
     let folderId = await gdGetOrCreateFolder();
     pptSetOdProgress(20, 'Subiendo archivo...');
 
-    // 2. Upload file (multipart)
+    // 2. Upload file — convert PPTX to Google Slides for embed support
     const safeArea = _pptAreaSel.replace(/[^a-zA-Z0-9]/g,'_');
     const fileName = `${safeArea}_${mes}_${anio}_${_pptFile.name}`;
-    const metadata = { name: fileName, parents: [folderId] };
+    const isPdf = _pptFile.name.toLowerCase().endsWith('.pdf');
+
+    const metadata = {
+      name: fileName,
+      parents: [folderId],
+      // Convert PPTX to Google Slides so it can be embedded
+      ...(isPdf ? {} : { mimeType: 'application/vnd.google-apps.presentation' })
+    };
     const form = new FormData();
     form.append('metadata', new Blob([JSON.stringify(metadata)], {type:'application/json'}));
     form.append('file', _pptFile);
 
     const uploadRes = await fetch(
-      'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,name,webViewLink,size',
+      'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,name,webViewLink,size,mimeType',
       { method:'POST', headers:{'Authorization':'Bearer '+_gdToken}, body: form }
     );
     if(!uploadRes.ok){ const t=await uploadRes.text(); throw new Error('Error al subir: '+t); }
@@ -2336,9 +2341,13 @@ async function pptDoUpload(){
       body: JSON.stringify({role:'reader', type:'anyone'})
     });
 
-    // 4. Get shareable link
+    // 4. Build embed URL based on type
+    const isSlides = uploaded.mimeType === 'application/vnd.google-apps.presentation';
     const shareUrl = `https://drive.google.com/file/d/${uploaded.id}/view`;
     const downloadUrl = `https://drive.google.com/uc?export=download&id=${uploaded.id}`;
+    const embedUrl = isSlides
+      ? `https://docs.google.com/presentation/d/${uploaded.id}/embed?start=false&loop=false&delayms=5000`
+      : `https://drive.google.com/file/d/${uploaded.id}/preview`; // PDF
     pptSetOdProgress(90, 'Guardando referencia...');
 
     const pptRef = {
@@ -2346,6 +2355,7 @@ async function pptDoUpload(){
       source: 'googledrive',
       shareUrl,
       downloadUrl,
+      embedUrl,
       driveFileId: uploaded.id,
       size: _pptFile.size,
       uploadedAt: new Date().toISOString()
@@ -2557,6 +2567,29 @@ function gdUpdateUI(){
 
 // alias so existing HTML calls work
 function odUpdateUI(){ gdUpdateUI(); }
+
+// ── Presentation navigation ───────────────────────────
+const _pptSlide = {}; // track current slide per frame index
+function pptNav(idx, dir){
+  const frame = document.getElementById('pptFrame_'+idx);
+  const info  = document.getElementById('pptSlideInfo_'+idx);
+  if(!frame) return;
+  if(!_pptSlide[idx]) _pptSlide[idx] = 1;
+  if(dir==='next') _pptSlide[idx]++;
+  if(dir==='prev') _pptSlide[idx] = Math.max(1, _pptSlide[idx]-1);
+  // Send navigation message to Google Slides embed
+  try{
+    frame.contentWindow.postMessage(
+      JSON.stringify({action: dir==='next' ? 'slidechanged' : 'slidechanged', slide: _pptSlide[idx]}),
+      'https://docs.google.com'
+    );
+  }catch(e){}
+  // Navigate by reloading iframe to specific slide
+  const src = frame.src;
+  const baseUrl = src.split('&slide=')[0].split('#')[0];
+  frame.src = baseUrl + `&slide=id.p${_pptSlide[idx]}`;
+  if(info) info.textContent = `Diapositiva ${_pptSlide[idx]}`;
+}
 
 </script>
 
