@@ -28,6 +28,7 @@
     db = getFirestore(app);
     storage = getStorage(app);
     if (!firebaseConfig.apiKey.includes("TU_")) fe = true;
+    window.firebaseConfig = firebaseConfig;
   } catch(e) {}
 
   window._fe = fe;
@@ -268,10 +269,6 @@ document.addEventListener('click',e=>{
   </div>
   <!-- RIGHT: action buttons + burger -->
   <div style="display:flex;align-items:center;gap:8px;flex-shrink:0">
-    <button class="btn bghost bsm" onclick="openImport()" style="flex-shrink:0">
-      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-      Importar Word
-    </button>
     <button class="btn bghost bsm" onclick="openExportarTodos()" style="flex-shrink:0">
       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 10 12 5 7 10"/><line x1="12" y1="5" x2="12" y2="15"/><line x1="3" y1="15" x2="21" y2="15" stroke-dasharray="2 2" opacity=".4"/></svg>
       Exportar todos
@@ -378,6 +375,10 @@ document.addEventListener('click',e=>{
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
             Diapositiva
           </button>
+          <button class="tab-btn" id="tab-word" onclick="switchTab('word')">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+            Word
+          </button>
         </div>
       </div>
 
@@ -465,6 +466,49 @@ document.addEventListener('click',e=>{
         </div>
       </div>
 
+      <!-- TAB: WORD -->
+      <div id="pane-word" style="display:none;flex-direction:column;gap:12px;padding-top:4px">
+        <p style="font-size:13px;color:var(--t2);line-height:1.6;margin:0">El archivo <strong>.docx</strong> se sube a tu Google Drive y queda disponible para que todos puedan verlo y descargarlo directamente desde la web.</p>
+
+        <!-- Auth: no logado -->
+        <div id="wAuthPane" style="display:flex;flex-direction:column;align-items:center;gap:10px;padding:16px;border:1px solid var(--b2);border-radius:var(--rs);background:var(--s2)">
+          <div style="text-align:center">
+            <div style="font-size:14px;font-weight:600;color:var(--t1)">Conectar con Google Drive</div>
+            <div style="font-size:12px;color:var(--t3);margin-top:3px">Inicia sesión con tu Gmail para subir el archivo</div>
+          </div>
+          <button class="od-sign-btn" style="background:#4285f4" onclick="odSignIn()">
+            <svg width="16" height="16" viewBox="0 0 24 24"><path fill="#fff" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#fff" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#fff" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/><path fill="#fff" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+            Iniciar sesión con Google
+          </button>
+        </div>
+
+        <!-- Auth: logado -->
+        <div id="wUserPane" style="display:none;flex-direction:column;gap:10px">
+          <div class="od-user-pill">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#4285f4" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+            <span class="od-user-name" id="wUserName"></span>
+            <button onclick="odSignOut();wUpdateUI()" style="font-size:11px;padding:2px 8px;background:transparent;border:1px solid var(--b2);border-radius:4px;color:var(--t3);cursor:pointer">Cerrar sesión</button>
+          </div>
+          <div class="ppt-drop od-mode" id="wDropzone"
+            onclick="document.getElementById('wFileInput').click()"
+            ondragover="event.preventDefault();this.classList.add('over')"
+            ondragleave="this.classList.remove('over')"
+            ondrop="event.preventDefault();this.classList.remove('over');wHandleFile(event.dataTransfer.files[0])">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="opacity:.35"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><path d="M12 18v-6"/><path d="M9 15l3-3 3 3"/></svg>
+            <div style="font-size:13px;color:var(--t2)">Arrastra tu <strong>.docx</strong> aquí o <span style="color:#4285f4;font-weight:600">haz clic</span></div>
+            <div id="wDropLabel" style="font-size:12px;color:var(--t3)">El archivo se guardará en Google Drive → carpeta <em>Reportes Omnilife</em></div>
+          </div>
+          <input type="file" id="wFileInput" accept=".docx,.doc" style="display:none" onchange="wHandleFile(this.files[0])">
+          <div id="wProgress" style="display:none;flex-direction:column;gap:4px">
+            <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--t3)">
+              <span id="wProgressLabel">Subiendo a Google Drive...</span>
+              <span id="wProgressPct">0%</span>
+            </div>
+            <div class="ppt-prog"><div class="ppt-prog-bar od" id="wProgressBar" style="width:0%"></div></div>
+          </div>
+        </div>
+      </div>
+
       <div class="upload-progress" id="uploadProgress" style="display:none"><div class="upload-progress-bar" id="uploadBar" style="width:0%"></div></div>
     </div>
     <div class="mfoot">
@@ -479,15 +523,16 @@ document.addEventListener('click',e=>{
 
 <!-- MODAL IMPORTAR WORD -->
 <div class="bd" id="bdImport" onmousedown="bdMD(event,'bdImport')" onmouseup="bdMU(event,'bdImport')">
-  <div class="modal" style="max-width:580px">
+  <div class="modal" style="max-width:600px">
     <div class="mh">
       <div class="mt">Importar Reporte desde Word</div>
       <button class="mx" onclick="closeImport()">×</button>
     </div>
     <div class="mbody">
+      <!-- PASO 1: DROP -->
       <div id="impStep1">
         <p style="font-size:13px;color:var(--t2);margin-bottom:12px;line-height:1.6">
-          Sube un archivo <strong>.docx</strong> con el reporte mensual. Se extraerán automáticamente el contenido y la estructura para que puedas revisarlo antes de guardar.
+          Sube un <strong>.docx</strong> con el reporte mensual. La IA reconocerá automáticamente las secciones, el área y el mes.
         </p>
         <div class="dropzone" id="dropzone" onclick="document.getElementById('fileInput').click()" ondragover="dzOver(event)" ondragleave="dzLeave(event)" ondrop="dzDrop(event)">
           <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="opacity:.4;margin-bottom:8px"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><path d="M12 18v-6"/><path d="M9 15l3-3 3 3"/></svg>
@@ -497,19 +542,20 @@ document.addEventListener('click',e=>{
         <input type="file" id="fileInput" accept=".docx" style="display:none" onchange="handleDocx(this.files[0])">
       </div>
 
+      <!-- PASO 2: REVISIÓN -->
       <div id="impStep2" style="display:none;flex-direction:column;gap:12px">
         <div style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:rgba(200,241,53,.06);border:1px solid rgba(200,241,53,.2);border-radius:var(--rs)">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--ac)" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
           <span id="impFileName" style="font-size:12px;color:var(--ac);font-weight:600;flex:1"></span>
           <button onclick="resetImport()" style="font-size:11px;padding:2px 8px;background:transparent;border:1px solid var(--b2);border-radius:4px;color:var(--t3);cursor:pointer">Cambiar</button>
         </div>
+
         <div class="frow3">
           <div class="field"><label>Área</label>
             <select id="impArea">
               <option value="">Seleccionar...</option>
               <option>CEDIS</option><option>CREO</option><option>ATN</option>
               <option>MKT</option><option>ALMACÉN</option><option>SISTEMAS</option>
-              
             </select>
           </div>
           <div class="field"><label>Mes</label>
@@ -522,12 +568,31 @@ document.addEventListener('click',e=>{
           </div>
           <div class="field"><label>Año</label><input type="number" id="impAnio" min="2020" max="2030"></div>
         </div>
-        <div class="field"><label>Autor</label><input type="text" id="impAutor" placeholder="Responsable del área"></div>
-        <div class="field"><label>Resumen extraído</label><textarea id="impResumen" style="min-height:80px;line-height:1.7"></textarea></div>
-        <div class="field">
-          <label>Puntos clave extraídos</label>
-          <div id="impPuntosList"></div>
-          <button class="btn bghost bsm" style="margin-top:4px;width:100%;justify-content:center" onclick="addImpPunto()">+ Añadir punto</button>
+        <div class="field"><label>Autor / Responsable</label><input type="text" id="impAutor" placeholder="Nombre del responsable del área"></div>
+
+        <!-- Guardar en Google Drive (arriba, visible) -->
+        <div style="border:1px solid rgba(66,133,244,.3);border-radius:var(--rs);overflow:hidden;background:rgba(66,133,244,.04)">
+          <div style="padding:10px 14px;display:flex;align-items:center;gap:8px;cursor:pointer" onclick="impToggleGDrive()">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path fill="#4285f4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#4285f4" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#4285f4" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/><path fill="#4285f4" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+            <span style="font-size:12px;font-weight:600;color:#4285f4;flex:1">Subir .docx original a Google Drive</span>
+            <input type="checkbox" id="impGDrive" onclick="event.stopPropagation();impToggleGDrive()" style="width:15px;height:15px;accent-color:#4285f4;cursor:pointer">
+          </div>
+          <div id="impGDrivePane" style="display:none;padding:10px 14px;flex-direction:column;gap:8px">
+            <!-- No logado -->
+            <div id="impGDriveAuth" style="display:flex;align-items:center;gap:10px">
+              <button class="od-sign-btn" style="background:#4285f4;padding:7px 14px;font-size:12px;width:auto" onclick="odSignIn()">
+                <svg width="14" height="14" viewBox="0 0 24 24"><path fill="#fff" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#fff" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#fff" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/><path fill="#fff" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+                Iniciar sesión con Google
+              </button>
+              <span style="font-size:11px;color:var(--t3)">Para subir a Google Drive</span>
+            </div>
+            <!-- Logado -->
+            <div id="impGDriveUser" style="display:none;align-items:center;gap:8px">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#4285f4" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+              <span id="impGDriveUserName" style="font-size:12px;color:#4285f4;font-weight:600"></span>
+              <span style="font-size:11px;color:var(--t3)">— El .docx se subirá a la carpeta <em>Reportes Omnilife</em></span>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -945,10 +1010,13 @@ function switchTab(tab){
   document.getElementById('pane-secciones').style.display   = tab==='secciones'   ? ''     : 'none';
   document.getElementById('pane-libre').style.display        = tab==='libre'        ? 'flex' : 'none';
   document.getElementById('pane-diapositiva').style.display  = tab==='diapositiva'  ? 'flex' : 'none';
+  document.getElementById('pane-word').style.display         = tab==='word'         ? 'flex' : 'none';
   document.getElementById('tab-sec').classList.toggle('active',         tab==='secciones');
   document.getElementById('tab-libre').classList.toggle('active',       tab==='libre');
   document.getElementById('tab-diapositiva').classList.toggle('active', tab==='diapositiva');
+  document.getElementById('tab-word').classList.toggle('active',        tab==='word');
   if(tab==='diapositiva') pptInlineUpdateUI();
+  if(tab==='word') wUpdateUI();
 }
 
 function addSeccion(label='', text=''){
@@ -1441,6 +1509,12 @@ async function saveReporte(){
     _pptInlineFile = null;
   }
 
+  // Upload Word to Drive if word tab is active and file selected
+  if(activeTab === 'word' && _wFile && _gdToken){
+    const wRef = await wUploadToDrive(area, mes, anio);
+    if(wRef) presentaciones = [...presentaciones, wRef];
+  }
+
   if(editId){
     const idx=reportes.findIndex(r=>r.id===editId);
     if(idx!==-1) reportes[idx]={...reportes[idx],...data, presentaciones};
@@ -1468,6 +1542,8 @@ async function saveReporte(){
   if(inlineDrop) inlineDrop.classList.remove('has-file');
   const inlineLbl = document.getElementById('pptInlineDropLabel');
   if(inlineLbl) inlineLbl.textContent = 'Archivos .pptx, .ppt o .pdf';
+  // Reset Word tab
+  wReset();
 }
 
 // ═══════════════════════════════════
@@ -1957,7 +2033,22 @@ function resetImport(){
   document.getElementById('fileInput').value='';
   document.getElementById('dropzone').classList.remove('has-file','over');
   document.getElementById('dzFile').textContent='';
+  document.getElementById('impSecciones').innerHTML='';
+  const cb = document.getElementById('impGDrive');
+  if(cb) cb.checked = false;
+  _impDocxFile = null;
 }
+
+function impToggleGDrive(){
+  const cb = document.getElementById('impGDrive');
+  const pane = document.getElementById('impGDrivePane');
+  if(!cb || !pane) return;
+  const checked = cb.checked;
+  pane.style.display = checked ? 'flex' : 'none';
+  if(checked) gdUpdateUI();
+}
+
+let _impDocxFile = null;
 
 function dzOver(e){e.preventDefault();document.getElementById('dropzone').classList.add('over');}
 function dzLeave(){document.getElementById('dropzone').classList.remove('over');}
@@ -1965,161 +2056,261 @@ function dzDrop(e){e.preventDefault();document.getElementById('dropzone').classL
 
 async function handleDocx(file){
   if(!file||!file.name.endsWith('.docx')){toast('Solo archivos .docx','error');return;}
-  document.getElementById('dzFile').textContent='⏳ Leyendo documento...';
+  _impDocxFile = file;
+  const dzFile = document.getElementById('dzFile');
+  dzFile.textContent='⏳ Leyendo documento...';
   try{
-    const buf=await file.arrayBuffer();
-    const text=await extractDocxText(new Uint8Array(buf));
-    const parsed=parseDocxContent(text);
+    const buf = await file.arrayBuffer();
+    const rawText = await extractDocxText(new Uint8Array(buf));
+    dzFile.textContent='🤖 Analizando con IA...';
+
+    // Get Gemini API key from Firebase config
+    const apiKey = window.firebaseConfig?.apiKey || '';
+    let parsed;
+    try{
+      parsed = await parseReporteWithGemini(rawText, apiKey);
+    }catch(e){
+      console.warn('Gemini falló, usando regex:', e.message);
+      parsed = parseReporteRegex(rawText);
+    }
 
     document.getElementById('impStep1').style.display='none';
     document.getElementById('impStep2').style.display='flex';
     document.getElementById('impSaveBtn').style.display='';
-    document.getElementById('impFileName').textContent=file.name;
-    document.getElementById('impArea').value=parsed.area||'';
-    document.getElementById('impMes').value=parsed.mes||MONTHS[new Date().getMonth()];
-    document.getElementById('impAnio').value=parsed.anio||new Date().getFullYear();
-    document.getElementById('impAutor').value=parsed.autor||'';
-    document.getElementById('impResumen').value=parsed.resumen||'';
-
-    const pl=document.getElementById('impPuntosList');pl.innerHTML='';
-    (parsed.puntos.length?parsed.puntos:['']). forEach(p=>addImpPunto(p));
+    document.getElementById('impFileName').textContent = file.name;
+    document.getElementById('impArea').value = parsed.area||'';
+    document.getElementById('impMes').value = parsed.mes||MONTHS[new Date().getMonth()];
+    document.getElementById('impAnio').value = parsed.anio||new Date().getFullYear();
+    document.getElementById('impAutor').value = parsed.autor||'';
     document.getElementById('dropzone').classList.add('has-file');
+
+    // Render extracted sections
+    renderImpSecciones(parsed.secciones);
   }catch(e){
-    document.getElementById('dzFile').textContent='';
+    dzFile.textContent='';
     toast('Error al leer: '+e.message,'error');
   }
 }
 
+function renderImpSecciones(secciones){
+  const container = document.getElementById('impSecciones');
+  container.innerHTML = '';
+  const secDefs = [
+    {id:'logros',        label:'1. Logros y Conclusiones'},
+    {id:'desafios',      label:'2. Desafíos y Acciones'},
+    {id:'capacitaciones',label:'3. Capacitaciones'},
+    {id:'errores',       label:'4. Errores Sistémicos'},
+    {id:'otros',         label:'5. Otros Temas Importantes'},
+  ];
+  secDefs.forEach(def=>{
+    const content = secciones?.[def.id]||'';
+    const div = document.createElement('div');
+    div.className = 'field';
+    div.innerHTML = `
+      <label style="display:flex;align-items:center;gap:6px">
+        <span style="width:8px;height:8px;border-radius:2px;background:var(--ac);flex-shrink:0"></span>
+        ${def.label}
+      </label>
+      <textarea id="impSec_${def.id}" style="min-height:${content?'90':'44'}px;line-height:1.7;font-size:12px"
+        placeholder="Sin contenido detectado para esta sección...">${content}</textarea>`;
+    container.appendChild(div);
+  });
+}
+
+async function parseReporteWithGemini(rawText, apiKey){
+  if(!apiKey) throw new Error('No API key');
+
+  const prompt = `Eres un experto en analizar informes mensuales de empresa española.
+
+Analiza este informe mensual y extrae la información estructurada.
+
+El informe tiene estas secciones (pueden tener numeración diferente o nombres similares):
+1. Logros y Conclusiones
+2. Desafíos y Acciones  
+3. Capacitaciones
+4. Errores Sistémicos que afectaron la operación
+5. Otros Temas Importantes
+
+Devuelve ÚNICAMENTE este JSON (sin markdown, sin texto extra):
+{
+  "area": "NOMBRE_AREA_EN_MAYUSCULAS",
+  "mes": "NombreMes",
+  "anio": 2026,
+  "autor": "Nombre del autor si aparece",
+  "secciones": {
+    "logros": "Texto completo de la sección de logros y conclusiones",
+    "desafios": "Texto completo de la sección de desafíos",
+    "capacitaciones": "Texto completo de la sección de capacitaciones",
+    "errores": "Texto completo de la sección de errores sistémicos",
+    "otros": "Texto completo de otros temas importantes"
+  }
+}
+
+REGLAS:
+- "area": extrae de "INFORME MENSUAL – NOMBRE" o del título. Ej: "SISTEMAS", "MKT", "CEDIS"
+- "mes": en español con mayúscula. Ej: "Abril", "Mayo"
+- "anio": año numérico
+- "autor": si no aparece, string vacío
+- Cada sección: incluye TODO el texto de esa sección, conservando los puntos y sub-puntos como texto continuo separado por saltos de línea
+- Si una sección no existe en el documento, usa string vacío ""
+
+TEXTO DEL INFORME:
+${rawText.substring(0,12000)}`;
+
+  const res = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
+    {method:'POST', headers:{'Content-Type':'application/json'},
+     body: JSON.stringify({contents:[{parts:[{text:prompt}]}], generationConfig:{temperature:0.1, maxOutputTokens:4000}})}
+  );
+  if(!res.ok){const e=await res.json().catch(()=>({}));throw new Error('Gemini: '+(e?.error?.message||res.status));}
+  const data = await res.json();
+  const text = data?.candidates?.[0]?.content?.parts?.[0]?.text||'';
+  const clean = text.replace(/```json|```/g,'').trim();
+  try{ return JSON.parse(clean); }catch(e){ throw new Error('JSON inválido de Gemini'); }
+}
+
+function parseReporteRegex(raw){
+  const MN={enero:'Enero',febrero:'Febrero',marzo:'Marzo',abril:'Abril',mayo:'Mayo',junio:'Junio',julio:'Julio',agosto:'Agosto',septiembre:'Septiembre',octubre:'Octubre',noviembre:'Noviembre',diciembre:'Diciembre'};
+  const mesM = raw.toLowerCase().match(/(enero|febrero|marzo|abril|mayo|junio|julio|agosto|septiembre|octubre|noviembre|diciembre)/);
+  const anioM = raw.match(/\b(202[0-9]|203[0-9])\b/);
+  const areaM = raw.match(/INFORME\s+MENSUAL\s+[–-]\s+([A-ZÁÉÍÓÚÑ\s]+)/i) || raw.match(/[áa]rea\s+de\s+([A-Za-záéíóúñ]+)/i);
+
+  // Split into sections by numbered headings
+  const SEC_PATTERNS = [
+    {id:'logros',         re:/\*?\*?1[\.\)]\s*(Logros|LOGROS)[^\n]*/i},
+    {id:'desafios',       re:/\*?\*?2[\.\)]\s*(Desaf[íi]os|DESAFÍOS)[^\n]*/i},
+    {id:'capacitaciones', re:/\*?\*?3[\.\)]\s*(Capacitaciones|CAPACITACIONES)[^\n]*/i},
+    {id:'errores',        re:/\*?\*?4[\.\)]\s*(Errores|ERRORES)[^\n]*/i},
+    {id:'otros',          re:/\*?\*?5[\.\)]\s*(Otros|OTROS)[^\n]*/i},
+  ];
+
+  const secciones = {};
+  const lines = raw.split('\n');
+  let currentSec = null;
+  let currentLines = [];
+
+  const flush = () => {
+    if(currentSec) secciones[currentSec] = currentLines.join('\n').trim();
+    currentLines = [];
+  };
+
+  for(const line of lines){
+    let matched = false;
+    for(const {id, re} of SEC_PATTERNS){
+      if(re.test(line)){ flush(); currentSec=id; matched=true; break; }
+    }
+    if(!matched && currentSec) currentLines.push(line);
+  }
+  flush();
+
+  return {
+    area: areaM ? areaM[1].toUpperCase().trim() : '',
+    mes: mesM ? MN[mesM[1]] : '',
+    anio: anioM ? parseInt(anioM[1]) : new Date().getFullYear(),
+    autor: '',
+    secciones
+  };
+}
+
 async function extractDocxText(uint8){
-  // Extract raw XML from ZIP
-  let xmlRaw='';
-  let i=0;
+  let xmlRaw='';let i=0;
   while(i<uint8.length-4){
     if(uint8[i]===0x50&&uint8[i+1]===0x4B&&uint8[i+2]===0x03&&uint8[i+3]===0x04){
-      const fnLen=uint8[i+26]|(uint8[i+27]<<8);
-      const extraLen=uint8[i+28]|(uint8[i+29]<<8);
-      const compMethod=uint8[i+8]|(uint8[i+9]<<8);
-      const compSize=uint8[i+18]|(uint8[i+19]<<8)|(uint8[i+20]<<16)|(uint8[i+21]<<24);
+      const fnLen=uint8[i+26]|(uint8[i+27]<<8);const extraLen=uint8[i+28]|(uint8[i+29]<<8);
+      const compMethod=uint8[i+8]|(uint8[i+9]<<8);const compSize=uint8[i+18]|(uint8[i+19]<<8)|(uint8[i+20]<<16)|(uint8[i+21]<<24);
       const fname=new TextDecoder().decode(uint8.slice(i+30,i+30+fnLen));
       const dataStart=i+30+fnLen+extraLen;
       if(fname==='word/document.xml'){
         const comp=uint8.slice(dataStart,dataStart+compSize);
         if(compMethod===0){xmlRaw=new TextDecoder('utf-8').decode(comp);break;}
         if(compMethod===8){
-          const ds=new DecompressionStream('deflate-raw');
-          const w=ds.writable.getWriter();w.write(comp);w.close();
+          const ds=new DecompressionStream('deflate-raw');const w=ds.writable.getWriter();w.write(comp);w.close();
           const chunks=[];const rd=ds.readable.getReader();
           while(true){const{done,value}=await rd.read();if(done)break;chunks.push(value);}
-          const tot=chunks.reduce((s,c)=>s+c.length,0);
-          const out=new Uint8Array(tot);let off=0;
+          const tot=chunks.reduce((s,c)=>s+c.length,0);const out=new Uint8Array(tot);let off=0;
           chunks.forEach(c=>{out.set(c,off);off+=c.length;});
           xmlRaw=new TextDecoder('utf-8').decode(out);break;
         }
       }
       i=dataStart+compSize;
-    } else {i++;}
+    }else{i++;}
   }
   if(!xmlRaw) throw new Error('No se pudo leer el documento');
 
-  // Extract text preserving structure
-  const lines=[];
-  const pBlocks=xmlRaw.split(/<w:p[ >\/]/);
+  const lines=[];const pBlocks=xmlRaw.split(/<w:p[ >\/]/);
   for(const block of pBlocks){
     const tms=[...block.matchAll(/<w:t[^>]*>([^<]*)<\/w:t>/g)];
     const text=tms.map(m=>m[1]).join('').trim();
     if(!text) continue;
-    const ilvlM=block.match(/<w:ilvl w:val="(\d+)"/);
-    const ilvl=ilvlM?parseInt(ilvlM[1]):null;
-    const indM=block.match(/<w:ind[^>]*w:left="(\d+)"/);
-    const indLeft=indM?parseInt(indM[1]):0;
-    const isBold=block.includes('<w:b/>')&&!block.includes('<w:b w:val="0"/>');
-
-    if(ilvl===null&&(indLeft>=700||(/^\d+\.\s/.test(text)&&text.length<80)||(isBold&&text.length<60))){
-      lines.push('### '+text);
-    } else if(ilvl!==null&&ilvl>=1){
-      lines.push('  > '+text);
-    } else if(ilvl===0){
-      lines.push('- '+text);
-    } else {
-      lines.push(text);
-    }
+    lines.push(text);
   }
   return lines.join('\n');
 }
 
-function parseDocxContent(raw){
-  // Detect date/month/year
-  const dateM=raw.match(/\b(\d{1,2})[\/\-\.](\d{1,2})[\/\-\.](\d{4})\b/);
-  const MN={enero:'Enero',febrero:'Febrero',marzo:'Marzo',abril:'Abril',mayo:'Mayo',junio:'Junio',julio:'Julio',agosto:'Agosto',septiembre:'Septiembre',octubre:'Octubre',noviembre:'Noviembre',diciembre:'Diciembre'};
-  const mesM=raw.toLowerCase().match(/(enero|febrero|marzo|abril|mayo|junio|julio|agosto|septiembre|octubre|noviembre|diciembre)/);
-  const anioM=raw.match(/\b(202[0-9]|203[0-9])\b/);
-
-  // Detect area from "Área de X" or from document title
-  const areaM=raw.match(/[áa]rea\s+de\s+([A-Za-záéíóúñÁÉÍÓÚÑ]+)/i)||raw.match(/###\s+(?:\d+\.\s*)?(?:[áa]rea\s+de\s+)?([A-ZÁÉÍÓÚÑ]{3,})/);
-
-  // Collect all bullets as puntos
-  const puntos=[];
-  const lines=raw.split('\n');
-  let resumenLines=[];
-  let inPuntos=false;
-
-  for(const line of lines){
-    const m=line.match(/^-\s+(.+)/);
-    const sm=line.match(/^\s+>\s+(.+)/);
-    if(m){puntos.push(m[1].trim());inPuntos=true;}
-    else if(sm&&inPuntos){
-      // merge sub-point with last punto
-      if(puntos.length) puntos[puntos.length-1]+=' '+sm[1].trim();
-    } else if(!line.startsWith('###')&&line.trim().length>20&&!inPuntos){
-      resumenLines.push(line.trim());
-    }
-  }
-
-  return{
-    area: areaM?areaM[1].toUpperCase().replace(/^ÁREA\s+DE\s+/i,'').trim():'',
-    mes: mesM?MN[mesM[1]]:'',
-    anio: anioM?parseInt(anioM[1]):new Date().getFullYear(),
-    autor: '',
-    resumen: resumenLines.slice(0,5).join('\n'),
-    puntos: puntos.filter(p=>p.length>3)
-  };
-}
-
-function addImpPunto(val=''){
-  const list=document.getElementById('impPuntosList');
-  const d=document.createElement('div');
-  d.style.cssText='display:flex;gap:6px;align-items:flex-start;margin-bottom:5px';
-  d.innerHTML=`<textarea style="flex:1;background:var(--s2);border:1px solid var(--b2);border-radius:var(--rs);color:var(--t1);font-family:DM Sans,sans-serif;font-size:13px;padding:6px 9px;outline:none;resize:none;min-height:36px;line-height:1.5;overflow:hidden" placeholder="Punto clave..." oninput="arResize(this)">${esc(val)}</textarea>
-  <button style="padding:5px 8px;background:transparent;border:1px solid var(--b2);border-radius:var(--rs);color:var(--t3);cursor:pointer;flex-shrink:0;font-size:13px" onclick="if(document.getElementById('impPuntosList').querySelectorAll('div').length>1)this.parentNode.remove()">×</button>`;
-  list.appendChild(d);
-}
-
 async function saveImported(){
-  const area=document.getElementById('impArea').value;
-  const mes=document.getElementById('impMes').value;
-  const anio=parseInt(document.getElementById('impAnio').value);
+  const area = document.getElementById('impArea').value;
+  const mes  = document.getElementById('impMes').value;
+  const anio = parseInt(document.getElementById('impAnio').value);
   if(!mes||!anio){toast('Mes y año son obligatorios','error');return;}
 
-  // Map imported content: resumen → logros, puntos → logros (appended)
-  const resumen=document.getElementById('impResumen').value.trim();
-  const puntos=[...document.getElementById('impPuntosList').querySelectorAll('textarea')]
-    .map(t=>t.value.trim()).filter(Boolean);
-  const logros=[resumen, ...puntos].filter(Boolean).join('\n\n');
+  const getSec = id => (document.getElementById('impSec_'+id)?.value||'').trim();
 
-  const data={
+  const data = {
     area, mes, anio,
-    autor: document.getElementById('impAutor').value.trim(),
-    logros,
-    desafios:'', capacitaciones:'', errores:'', otros:'',
-    imagenes:[]
+    autor:          document.getElementById('impAutor').value.trim(),
+    logros:         getSec('logros'),
+    desafios:       getSec('desafios'),
+    capacitaciones: getSec('capacitaciones'),
+    errores:        getSec('errores'),
+    otros:          getSec('otros'),
+    imagenes:[], extraSections:[], presentaciones:[]
   };
+
+  // Upload to Google Drive if requested
+  const uploadToDrive = document.getElementById('impGDrive')?.checked;
+  if(uploadToDrive && _impDocxFile){
+    if(!_gdToken){ toast('Inicia sesión con Google para subir a Drive','error'); return; }
+    try{
+      toast('Subiendo .docx a Google Drive...','success');
+      const folderId = await gdGetOrCreateFolder();
+      const safeArea = (area||'Reporte').replace(/[^a-zA-Z0-9]/g,'_');
+      const fileName = `${safeArea}_${mes}_${anio}_${_impDocxFile.name}`;
+      const metadata = { name: fileName, parents: [folderId] };
+      const form = new FormData();
+      form.append('metadata', new Blob([JSON.stringify(metadata)],{type:'application/json'}));
+      form.append('file', _impDocxFile);
+      const uploadRes = await fetch(
+        'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,name,webViewLink',
+        {method:'POST', headers:{'Authorization':'Bearer '+_gdToken}, body:form}
+      );
+      if(uploadRes.ok){
+        const uploaded = await uploadRes.json();
+        await fetch(`https://www.googleapis.com/drive/v3/files/${uploaded.id}/permissions`,{
+          method:'POST',
+          headers:{'Authorization':'Bearer '+_gdToken,'Content-Type':'application/json'},
+          body: JSON.stringify({role:'reader',type:'anyone'})
+        });
+        data.presentaciones = [{
+          name: _impDocxFile.name,
+          source: 'googledrive',
+          shareUrl: `https://drive.google.com/file/d/${uploaded.id}/view`,
+          downloadUrl: `https://drive.google.com/uc?export=download&id=${uploaded.id}`,
+          embedUrl: `https://drive.google.com/file/d/${uploaded.id}/preview`,
+          driveFileId: uploaded.id,
+          size: _impDocxFile.size,
+          uploadedAt: new Date().toISOString()
+        }];
+      }
+    }catch(e){ console.warn('Drive upload error:', e); }
+  }
 
   const tmp='loc_'+Date.now();
   const rec={id:tmp,...data,createdAt:new Date().toISOString()};
   const fbId=await fbAdd(data);if(fbId)rec.id=fbId;
   reportes.unshift(rec);activeId=rec.id;
+  _impDocxFile = null;
   saveLocal();closeImport();renderSidebar();renderView(activeId);
-  toast('Reporte importado ✓ — revisa y completa las secciones pendientes','success');
+  toast('Reporte importado ✓','success');
 }
 
 // ═══════════════════════════════════
@@ -2709,23 +2900,125 @@ async function gdEnsureToken(){
 }
 
 function gdUpdateUI(){
+  // PPT modal
   const authPane = document.getElementById('pptOdAuthPane');
   const userPane = document.getElementById('pptOdUserPane');
-  if(!authPane||!userPane) return;
-  if(_gdAccount){
-    sessionStorage.setItem('gd_account', JSON.stringify(_gdAccount));
-    authPane.style.display='none'; userPane.style.display='flex';
-    const nm = document.getElementById('pptOdUserName');
-    if(nm) nm.textContent = _gdAccount.name||_gdAccount.email||'Usuario Google';
-    if(_pptFile) document.getElementById('pptUploadBtn').style.display='inline-flex';
-  }else{
-    sessionStorage.removeItem('gd_account');
-    authPane.style.display='flex'; userPane.style.display='none';
+  if(authPane&&userPane){
+    if(_gdAccount){
+      sessionStorage.setItem('gd_account', JSON.stringify(_gdAccount));
+      authPane.style.display='none'; userPane.style.display='flex';
+      const nm = document.getElementById('pptOdUserName');
+      if(nm) nm.textContent = _gdAccount.name||_gdAccount.email||'Usuario Google';
+      if(_pptFile) document.getElementById('pptUploadBtn').style.display='inline-flex';
+    }else{
+      sessionStorage.removeItem('gd_account');
+      authPane.style.display='flex'; userPane.style.display='none';
+    }
+  }
+  // Word tab Google Drive section
+  wUpdateUI();
+  const impUser = document.getElementById('impGDriveUser');
+  const impName = document.getElementById('impGDriveUserName');
+  if(impAuth && impUser){
+    if(_gdAccount){
+      impAuth.style.display='none'; impUser.style.display='flex';
+      if(impName) impName.textContent = _gdAccount.name||_gdAccount.email||'Google';
+    }else{
+      impAuth.style.display='flex'; impUser.style.display='none';
+    }
   }
 }
 
 // alias so existing HTML calls work
-function odUpdateUI(){ gdUpdateUI(); pptInlineUpdateUI(); }
+function odUpdateUI(){ gdUpdateUI(); pptInlineUpdateUI(); wUpdateGDriveUI(); }
+
+// ── Word tab ─────────────────────────────────────────
+let _wFile = null;
+
+function wReset(){
+  _wFile = null;
+  const dz = document.getElementById('wDropzone');
+  if(dz) dz.classList.remove('has-file','over');
+  const lbl = document.getElementById('wDropLabel');
+  if(lbl) lbl.textContent = 'El archivo se guardará en Google Drive → carpeta Reportes Omnilife';
+  const inp = document.getElementById('wFileInput');
+  if(inp) inp.value = '';
+  const prog = document.getElementById('wProgress');
+  if(prog) prog.style.display = 'none';
+  const bar = document.getElementById('wProgressBar');
+  if(bar) bar.style.width = '0%';
+}
+
+function wUpdateUI(){
+  const authPane = document.getElementById('wAuthPane');
+  const userPane = document.getElementById('wUserPane');
+  const name     = document.getElementById('wUserName');
+  if(!authPane||!userPane) return;
+  if(_gdAccount){
+    authPane.style.display='none'; userPane.style.display='flex';
+    if(name) name.textContent = _gdAccount.name||_gdAccount.email||'Google';
+    if(_wFile) document.getElementById('pptUploadBtn')?.style; // no separate button needed
+  }else{
+    authPane.style.display='flex'; userPane.style.display='none';
+  }
+}
+
+function wHandleFile(file){
+  if(!file) return;
+  if(!file.name.match(/\.docx?$/i)){ toast('Solo archivos .docx','error'); return; }
+  if(file.size > 100*1024*1024){ toast('Máximo 100 MB','error'); return; }
+  _wFile = file;
+  const dz  = document.getElementById('wDropzone');
+  const lbl = document.getElementById('wDropLabel');
+  if(dz)  dz.classList.add('has-file');
+  if(lbl) lbl.textContent = `✓ ${file.name}  (${(file.size/1024/1024).toFixed(1)} MB)`;
+}
+
+async function wUploadToDrive(area, mes, anio){
+  if(!_wFile) return null;
+  const token = await gdEnsureToken();
+  if(!token) return null;
+  const prog  = document.getElementById('wProgress');
+  const bar   = document.getElementById('wProgressBar');
+  const lbl   = document.getElementById('wProgressLabel');
+  const pctEl = document.getElementById('wProgressPct');
+  if(prog) prog.style.display='flex';
+  const setP = (p,l) => { if(bar) bar.style.width=p+'%'; if(lbl) lbl.textContent=l; if(pctEl) pctEl.textContent=p+'%'; };
+  try{
+    setP(10,'Buscando carpeta...');
+    const folderId = await gdGetOrCreateFolder();
+    setP(30,'Subiendo .docx...');
+    const safeArea = (area||'Reporte').replace(/[^a-zA-Z0-9]/g,'_');
+    const fileName = `${safeArea}_${mes}_${anio}_${_wFile.name}`;
+    const metadata = {name:fileName, parents:[folderId]};
+    const form = new FormData();
+    form.append('metadata', new Blob([JSON.stringify(metadata)],{type:'application/json'}));
+    form.append('file', _wFile);
+    const res = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,name',
+      {method:'POST', headers:{'Authorization':'Bearer '+token}, body:form});
+    if(!res.ok) throw new Error(await res.text());
+    const uploaded = await res.json();
+    setP(80,'Generando enlace...');
+    await fetch(`https://www.googleapis.com/drive/v3/files/${uploaded.id}/permissions`,{
+      method:'POST', headers:{'Authorization':'Bearer '+token,'Content-Type':'application/json'},
+      body: JSON.stringify({role:'reader',type:'anyone'})
+    });
+    setP(100,'¡Listo!');
+    setTimeout(()=>{ if(prog) prog.style.display='none'; },2000);
+    return {
+      name: _wFile.name, source: 'googledrive',
+      shareUrl:    `https://drive.google.com/file/d/${uploaded.id}/view`,
+      downloadUrl: `https://drive.google.com/uc?export=download&id=${uploaded.id}`,
+      embedUrl:    `https://drive.google.com/file/d/${uploaded.id}/preview`,
+      driveFileId: uploaded.id, size: _wFile.size, uploadedAt: new Date().toISOString()
+    };
+  }catch(e){
+    console.warn('Word Drive upload:',e);
+    if(prog) prog.style.display='none';
+    toast('Error al subir Word: '+e.message,'error');
+    return null;
+  }
+}
 
 // ── Inline PPT section (inside Nuevo Reporte modal) ──
 let _pptInlineFile = null;
