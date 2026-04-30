@@ -1175,9 +1175,9 @@ function renderView(id){
       ${(r.presentaciones||[]).map((f,i)=>{
         const fileId = f.driveFileId;
         const isPdf = f.name && f.name.toLowerCase().endsWith('.pdf');
-        // Google Drive preview works for both PDF and PPTX
+        // Use Google Docs viewer — works for PPTX and PDF without sign-in
         const embedUrl = fileId
-          ? `https://drive.google.com/file/d/${fileId}/preview`
+          ? `https://docs.google.com/viewer?srcid=${fileId}&pid=explorer&efh=false&a=v&chrome=false&embedded=true`
           : null;
         return `
         <div style="margin-bottom:24px">
