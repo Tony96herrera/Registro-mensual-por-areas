@@ -591,12 +591,12 @@ document.addEventListener('click',e=>{
         <!-- No logado -->
         <div id="pptOdAuthPane" style="display:flex;flex-direction:column;align-items:center;gap:10px;padding:16px;border:1px solid var(--b2);border-radius:var(--rs);background:var(--s2)">
           <div style="text-align:center">
-            <div style="font-size:14px;font-weight:600;color:var(--t1)">Conectar con OneDrive</div>
-            <div style="font-size:12px;color:var(--t3);margin-top:3px">Inicia sesión con tu cuenta Microsoft para subir el archivo</div>
+            <div style="font-size:14px;font-weight:600;color:var(--t1)">Conectar con Google Drive</div>
+            <div style="font-size:12px;color:var(--t3);margin-top:3px">Inicia sesión con tu cuenta de Gmail para subir el archivo</div>
           </div>
-          <button class="od-sign-btn" onclick="odSignIn()">
-            <svg width="16" height="16" viewBox="0 0 21 21"><rect width="10" height="10" fill="#f25022"/><rect x="11" width="10" height="10" fill="#7fba00"/><rect y="11" width="10" height="10" fill="#00a4ef"/><rect x="11" y="11" width="10" height="10" fill="#ffb900"/></svg>
-            Iniciar sesión con Microsoft
+          <button class="od-sign-btn" style="background:#4285f4" onclick="odSignIn()">
+            <svg width="16" height="16" viewBox="0 0 24 24"><path fill="#fff" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#fff" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#fff" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/><path fill="#fff" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+            Iniciar sesión con Google
           </button>
           <div id="pptOdAuthMsg" style="font-size:12px;color:var(--t3);text-align:center"></div>
         </div>
@@ -637,9 +637,9 @@ document.addEventListener('click',e=>{
     </div>
     <div class="mfoot">
       <button class="btn bghost" onclick="closePptModal()">Cerrar</button>
-      <button class="btn bprim" id="pptUploadBtn" style="display:none;background:#0078d4" onclick="pptDoUpload()">
+      <button class="btn bprim" id="pptUploadBtn" style="display:none;background:#4285f4" onclick="pptDoUpload()">
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="17 10 12 5 7 10"/><line x1="12" y1="5" x2="12" y2="15"/><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/></svg>
-        Subir a OneDrive
+        Subir a Google Drive
       </button>
     </div>
   </div>
@@ -674,8 +674,8 @@ async function fbLoad(){
     const s=await getDocs(q);
     reportes=[];s.forEach(d=>reportes.push({id:d.id,...d.data()}));
     saveLocal();
-    document.getElementById('fbChip').innerHTML='<div class="dot"></div>Firebase ✓';
-    document.getElementById('fbChip').classList.add('on');
+    const chip=document.getElementById('fbChip');
+    if(chip){chip.innerHTML='<div class="dot"></div>Firebase ✓';chip.classList.add('on');}
     renderSidebar();if(activeId)renderView(activeId);
   }catch(e){ console.warn('fbLoad:',e); }
 }
@@ -2090,11 +2090,21 @@ document.addEventListener('keydown',e=>{
 
 window.addEventListener('load',()=>{
   applyTheme();
-  renderSidebar();
-  setTimeout(()=>{
-    if(window._fe) fbLoad().then(()=>autoCleanupOldImages());
-    else autoCleanupOldImages();
-  },400);
+  // Restore Google Drive session
+  try{
+    const saved = sessionStorage.getItem('gd_account');
+    if(saved) _gdAccount = JSON.parse(saved);
+    // Try to restore token silently
+    if(_gdAccount) gdEnsureToken().then(t=>{ if(t) _gdToken=t; });
+  }catch(e){}
+  // Handle OAuth redirect
+  gdHandleRedirect().then(()=>{
+    renderSidebar();
+    setTimeout(()=>{
+      if(window._fe) fbLoad().then(()=>autoCleanupOldImages());
+      else autoCleanupOldImages();
+    },400);
+  });
 });
 
 // Runs automatically on load — deletes Storage images from reports older than 3 months
@@ -2147,37 +2157,38 @@ async function autoCleanupOldImages(){
 }
 
 // ═══════════════════════════════════════════════════════
-//  POWERPOINT — OneDrive (OAuth2 PKCE)
+//  POWERPOINT — Google Drive (OAuth2)
 // ═══════════════════════════════════════════════════════
-const OD_CLIENT_ID = '7e5e7715-62a2-4be6-8357-af133de8fb83';
-const OD_TENANT    = '7c4d239e-9534-4e05-bb0b-ce4e8c32814a';
-const OD_FOLDER    = 'Reportes Omnilife';
-const OD_SCOPES    = 'Files.ReadWrite User.Read offline_access';
+const GD_CLIENT_ID = '684556594063-ac7s7g5kbmd83vvns4u643h8rsbbi7j7.apps.googleusercontent.com';
+const GD_REDIRECT  = 'https://registrosemanal.netlify.app/reportes';
+const GD_FOLDER    = 'Reportes Omnilife';
+const GD_SCOPES    = 'https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/userinfo.profile';
 
-let _odAccount   = null;
-let _odToken     = null;
-let _pptFile     = null;  // archivo seleccionado
-let _pptAreaSel  = null;  // área seleccionada
+let _gdAccount = null;
+let _gdToken   = null;
+let _pptFile   = null;
+let _pptAreaSel = null;
 
 // ── Modal open/close ──────────────────────────────────
 function openPptModal(){
   _pptFile = null;
   _pptAreaSel = null;
-  document.getElementById('pptArea').value = '';
+  const areaEl = document.getElementById('pptArea');
+  if(areaEl) areaEl.value = '';
   document.getElementById('pptMesInfo').style.display = 'none';
   document.getElementById('pptOdSection').style.display = 'none';
   document.getElementById('pptUploadBtn').style.display = 'none';
   document.getElementById('pptExisting').style.display = 'none';
   const drop = document.getElementById('pptDropOd');
   if(drop){ drop.classList.remove('has-file'); }
-  document.getElementById('pptDropOdFile').textContent = 'El archivo se guardará en OneDrive → carpeta Reportes Omnilife';
+  document.getElementById('pptDropOdFile').textContent = 'El archivo se guardará en Google Drive → carpeta Reportes Omnilife';
   pptSetOdProgress(null);
-  odUpdateUI();
+  gdUpdateUI();
   document.getElementById('bdPpt').classList.add('open');
 }
 function closePptModal(){ document.getElementById('bdPpt').classList.remove('open'); }
 
-// ── Area selected → show month info + upload zone ────
+// ── Area selected ─────────────────────────────────────
 function pptAreaChange(){
   const area = document.getElementById('pptArea').value;
   _pptAreaSel = area || null;
@@ -2185,7 +2196,7 @@ function pptAreaChange(){
   document.getElementById('pptUploadBtn').style.display = 'none';
   const drop = document.getElementById('pptDropOd');
   if(drop) drop.classList.remove('has-file');
-  document.getElementById('pptDropOdFile').textContent = 'El archivo se guardará en OneDrive → carpeta Reportes Omnilife';
+  document.getElementById('pptDropOdFile').textContent = 'El archivo se guardará en Google Drive → carpeta Reportes Omnilife';
 
   if(!area){
     document.getElementById('pptMesInfo').style.display = 'none';
@@ -2193,24 +2204,17 @@ function pptAreaChange(){
     document.getElementById('pptExisting').style.display = 'none';
     return;
   }
-
-  // Show month info
   const now = new Date();
   const mes = MONTHS[now.getMonth()];
   const anio = now.getFullYear();
   document.getElementById('pptMesInfoTxt').textContent = `${area} — ${mes} ${anio}`;
   document.getElementById('pptMesInfo').style.display = '';
-
-  // Show upload section
   document.getElementById('pptOdSection').style.display = 'flex';
-  odUpdateUI();
-
-  // Show existing PPTs for this area/month
+  gdUpdateUI();
   pptShowExisting(area, mes, anio);
 }
 
 function pptShowExisting(area, mes, anio){
-  // Find matching report
   const r = reportes.find(x => x.area===area && x.mes===mes && String(x.anio)===String(anio));
   const files = r?.presentaciones || [];
   const wrap = document.getElementById('pptExisting');
@@ -2223,12 +2227,13 @@ function pptShowExisting(area, mes, anio){
       <div class="ppt-info">
         <div class="ppt-name">${esc(f.name)}</div>
         <div class="ppt-meta">
-          <span class="ppt-source od">OneDrive</span>
-          ${f.uploadedAt ? `<span>${new Date(f.uploadedAt).toLocaleDateString('es-ES',{day:'2-digit',month:'short',year:'numeric'})}</span>` : ''}
+          <span class="ppt-source od" style="background:rgba(66,133,244,.1);color:#4285f4;border-color:rgba(66,133,244,.2)">Google Drive</span>
+          ${f.uploadedAt?`<span>${new Date(f.uploadedAt).toLocaleDateString('es-ES',{day:'2-digit',month:'short',year:'numeric'})}</span>`:''}
+          ${f.size?`<span>${(f.size/1024/1024).toFixed(1)} MB</span>`:''}
         </div>
       </div>
       <div class="ppt-actions">
-        <a href="${esc(f.shareUrl||'#')}" target="_blank" class="ppt-btn od-open" style="font-size:11px;padding:4px 10px">Ver / Descargar</a>
+        <a href="${esc(f.shareUrl||'#')}" target="_blank" class="ppt-btn od-open" style="background:#4285f4;font-size:11px;padding:4px 10px">Ver / Descargar</a>
         <button class="ppt-btn danger" onclick="pptDeleteFromArea('${area}','${mes}',${anio},${i})" title="Quitar">
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
         </button>
@@ -2261,151 +2266,79 @@ function pptOdFileSelect(file){
   const drop = document.getElementById('pptDropOd');
   if(drop) drop.classList.add('has-file');
   document.getElementById('pptDropOdFile').textContent = `✓ ${file.name}  (${(file.size/1024/1024).toFixed(1)} MB)`;
-  if(_odAccount) document.getElementById('pptUploadBtn').style.display = 'inline-flex';
+  if(_gdAccount) document.getElementById('pptUploadBtn').style.display = 'inline-flex';
 }
 
 function pptSetOdProgress(pct, label){
-  const wrap = document.getElementById('pptProgOd');
-  const bar  = document.getElementById('pptProgOdBar');
-  const lbl  = document.getElementById('pptProgOdLabel');
-  const pctEl= document.getElementById('pptProgOdPct');
+  const wrap  = document.getElementById('pptProgOd');
+  const bar   = document.getElementById('pptProgOdBar');
+  const lbl   = document.getElementById('pptProgOdLabel');
+  const pctEl = document.getElementById('pptProgOdPct');
   if(pct===null){ if(wrap) wrap.style.display='none'; return; }
   if(wrap) wrap.style.display='flex';
   if(bar)  bar.style.width = pct+'%';
-  if(lbl && label)  lbl.textContent = label;
+  if(lbl && label) lbl.textContent = label;
   if(pctEl) pctEl.textContent = pct+'%';
 }
 
-// ── Upload ────────────────────────────────────────────
+// ── Upload to Google Drive ────────────────────────────
 async function pptDoUpload(){
   if(!_pptFile){ toast('Selecciona un archivo primero','error'); return; }
   if(!_pptAreaSel){ toast('Selecciona un área primero','error'); return; }
-  if(!_odToken){ toast('Inicia sesión con Microsoft primero','error'); return; }
+  if(!_gdToken){ toast('Inicia sesión con Google primero','error'); return; }
 
   const now  = new Date();
   const mes  = MONTHS[now.getMonth()];
   const anio = now.getFullYear();
-
-  // Find or note report for this area+month
-  let r = reportes.find(x => x.area===_pptAreaSel && x.mes===mes && String(x.anio)===String(anio));
-
-  const btn = document.getElementById('pptUploadBtn');
+  const btn  = document.getElementById('pptUploadBtn');
   btn.disabled = true;
-  pptSetOdProgress(0, 'Preparando subida...');
+  pptSetOdProgress(5, 'Buscando carpeta en Drive...');
 
   try{
-    const token = await odEnsureToken();
-    if(!token) throw new Error('No se pudo obtener acceso a OneDrive');
+    // 1. Find or create folder
+    let folderId = await gdGetOrCreateFolder();
+    pptSetOdProgress(20, 'Subiendo archivo...');
 
+    // 2. Upload file (multipart)
     const safeArea = _pptAreaSel.replace(/[^a-zA-Z0-9]/g,'_');
-    const safeName = _pptFile.name.replace(/[^a-zA-Z0-9._-]/g,'_');
-    const remoteFileName = `${safeArea}_${mes}_${anio}_${safeName}`;
-    // Use path segments — don't double-encode
-    const remotePath = `${OD_FOLDER}/${remoteFileName}`;
+    const fileName = `${safeArea}_${mes}_${anio}_${_pptFile.name}`;
+    const metadata = { name: fileName, parents: [folderId] };
+    const form = new FormData();
+    form.append('metadata', new Blob([JSON.stringify(metadata)], {type:'application/json'}));
+    form.append('file', _pptFile);
 
-    pptSetOdProgress(10, 'Preparando carpeta en OneDrive...');
-
-    // Ensure folder exists
-    const folderCheckRes = await fetch(
-      `https://graph.microsoft.com/v1.0/me/drive/root:/${encodeURIComponent(OD_FOLDER)}`,
-      { headers:{'Authorization':'Bearer '+token} }
+    const uploadRes = await fetch(
+      'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,name,webViewLink,size',
+      { method:'POST', headers:{'Authorization':'Bearer '+_gdToken}, body: form }
     );
-    if(folderCheckRes.status === 404){
-      await fetch(`https://graph.microsoft.com/v1.0/me/drive/root/children`,{
-        method:'POST',
-        headers:{'Authorization':'Bearer '+token,'Content-Type':'application/json'},
-        body: JSON.stringify({name:OD_FOLDER, folder:{}, '@microsoft.graph.conflictBehavior':'replace'})
-      });
-    }
+    if(!uploadRes.ok){ const t=await uploadRes.text(); throw new Error('Error al subir: '+t); }
+    const uploaded = await uploadRes.json();
+    pptSetOdProgress(75, 'Generando enlace compartido...');
 
-    pptSetOdProgress(18, 'Subiendo archivo...');
+    // 3. Make file publicly viewable
+    await fetch(`https://www.googleapis.com/drive/v3/files/${uploaded.id}/permissions`,{
+      method:'POST',
+      headers:{'Authorization':'Bearer '+_gdToken,'Content-Type':'application/json'},
+      body: JSON.stringify({role:'reader', type:'anyone'})
+    });
 
-    let uploadedItem;
-
-    // Build the Graph API path correctly — encode each segment separately
-    const graphPath = encodeURIComponent(OD_FOLDER)+'/'+encodeURIComponent(remoteFileName);
-
-    const sessRes = await fetch(
-      `https://graph.microsoft.com/v1.0/me/drive/root:/${graphPath}:/createUploadSession`,{
-        method:'POST',
-        headers:{'Authorization':'Bearer '+token,'Content-Type':'application/json'},
-        body: JSON.stringify({
-          item:{
-            'name': remoteFileName,
-            '@microsoft.graph.conflictBehavior':'rename'
-          }
-        })
-      }
-    );
-    if(!sessRes.ok){
-      const errText = await sessRes.text();
-      console.error('Session error response:', errText);
-      let errMsg = 'Error al iniciar subida';
-      try{
-        const errJson = JSON.parse(errText);
-        errMsg = errJson.error?.message || errMsg;
-      }catch(e){}
-      throw new Error(errMsg);
-    }
-    const sessData = await sessRes.json();
-    const uploadUrl = sessData.uploadUrl;
-    if(!uploadUrl) throw new Error('No se recibió URL de subida de OneDrive');
-
-    const ab = await _pptFile.arrayBuffer();
-    const chunkSize = 5*1024*1024; // 5MB chunks
-    let offset=0, lastRes;
-    while(offset < _pptFile.size){
-      const end = Math.min(offset+chunkSize, _pptFile.size);
-      lastRes = await fetch(uploadUrl,{
-        method:'PUT',
-        headers:{
-          'Content-Length': String(end-offset),
-          'Content-Range': `bytes ${offset}-${end-1}/${_pptFile.size}`
-        },
-        body: ab.slice(offset,end)
-      });
-      if(!lastRes.ok && lastRes.status !== 202 && lastRes.status !== 201 && lastRes.status !== 200){
-        const t = await lastRes.text();
-        throw new Error('Error en chunk de subida: '+t);
-      }
-      offset = end;
-      pptSetOdProgress(Math.round(18+(offset/_pptFile.size)*57), `Subiendo... ${Math.round((offset/_pptFile.size)*100)}%`);
-    }
-    uploadedItem = await lastRes.json();
-    pptSetOdProgress(78, 'Generando enlace de acceso...');
-
-    // Create share link — try anonymous first, fall back to organization
-    let shareUrl = uploadedItem?.webUrl || '#';
-    try{
-      let shareRes = await fetch(`https://graph.microsoft.com/v1.0/me/drive/items/${uploadedItem.id}/createLink`,{
-        method:'POST',
-        headers:{'Authorization':'Bearer '+token,'Content-Type':'application/json'},
-        body: JSON.stringify({type:'view',scope:'anonymous'})
-      });
-      if(!shareRes.ok){
-        // Try organization scope (for corporate tenants that block anonymous)
-        shareRes = await fetch(`https://graph.microsoft.com/v1.0/me/drive/items/${uploadedItem.id}/createLink`,{
-          method:'POST',
-          headers:{'Authorization':'Bearer '+token,'Content-Type':'application/json'},
-          body: JSON.stringify({type:'view',scope:'organization'})
-        });
-      }
-      if(shareRes.ok){ const sd=await shareRes.json(); shareUrl=sd.link?.webUrl||shareUrl; }
-    }catch(e){ console.warn('Share link error, using webUrl:', e); }
-
-    pptSetOdProgress(95, 'Guardando referencia...');
+    // 4. Get shareable link
+    const shareUrl = `https://drive.google.com/file/d/${uploaded.id}/view`;
+    const downloadUrl = `https://drive.google.com/uc?export=download&id=${uploaded.id}`;
+    pptSetOdProgress(90, 'Guardando referencia...');
 
     const pptRef = {
       name: _pptFile.name,
-      source: 'onedrive',
+      source: 'googledrive',
       shareUrl,
-      webUrl: uploadedItem?.webUrl,
-      driveItemId: uploadedItem?.id,
+      downloadUrl,
+      driveFileId: uploaded.id,
       size: _pptFile.size,
       uploadedAt: new Date().toISOString()
     };
 
-    // Save to the matching report if it exists, otherwise store in a general PPT collection
+    // 5. Save to report
+    let r = reportes.find(x => x.area===_pptAreaSel && x.mes===mes && String(x.anio)===String(anio));
     if(r){
       if(!r.presentaciones) r.presentaciones=[];
       r.presentaciones.push(pptRef);
@@ -2413,23 +2346,20 @@ async function pptDoUpload(){
       await fbUp(r.id, {presentaciones: r.presentaciones});
       if(activeId===r.id) renderView(activeId);
     } else {
-      // No report yet for this area/month — save in a standalone ppts collection in Firestore
       if(window._fe && window._db){
         const {collection,addDoc} = window._ff;
         await addDoc(collection(window._db,'presentaciones'),{
           area:_pptAreaSel, mes, anio, ...pptRef, createdAt:new Date().toISOString()
         });
       }
-      toast(`⚠️ No hay reporte de ${_pptAreaSel} para ${mes} ${anio}. El PPT se guardó en OneDrive igualmente.`,'success');
+      toast(`PPT guardado. No hay reporte de ${_pptAreaSel} para ${mes} ${anio} aún.`,'success');
     }
 
     pptSetOdProgress(100, '¡Subido correctamente!');
-    toast('PowerPoint subido a OneDrive ✓','success');
-
-    // Reset file
+    toast('PowerPoint subido a Google Drive ✓','success');
     _pptFile = null;
     document.getElementById('pptDropOd').classList.remove('has-file');
-    document.getElementById('pptDropOdFile').textContent = 'El archivo se guardará en OneDrive → carpeta Reportes Omnilife';
+    document.getElementById('pptDropOdFile').textContent = 'El archivo se guardará en Google Drive → carpeta Reportes Omnilife';
     document.getElementById('pptUploadBtn').style.display = 'none';
     pptShowExisting(_pptAreaSel, mes, anio);
 
@@ -2443,12 +2373,31 @@ async function pptDoUpload(){
   }
 }
 
+async function gdGetOrCreateFolder(){
+  // Search for existing folder
+  const searchRes = await fetch(
+    `https://www.googleapis.com/drive/v3/files?q=name='${GD_FOLDER}' and mimeType='application/vnd.google-apps.folder' and trashed=false&fields=files(id,name)`,
+    { headers:{'Authorization':'Bearer '+_gdToken} }
+  );
+  const searchData = await searchRes.json();
+  if(searchData.files && searchData.files.length > 0) return searchData.files[0].id;
+
+  // Create folder
+  const createRes = await fetch('https://www.googleapis.com/drive/v3/files',{
+    method:'POST',
+    headers:{'Authorization':'Bearer '+_gdToken,'Content-Type':'application/json'},
+    body: JSON.stringify({name:GD_FOLDER, mimeType:'application/vnd.google-apps.folder'})
+  });
+  const folder = await createRes.json();
+  return folder.id;
+}
+
 // ═══════════════════════════════════════════════════════
-//  ONEDRIVE AUTH — OAuth2 PKCE (sin librería externa)
+//  GOOGLE AUTH — OAuth2 PKCE
 // ═══════════════════════════════════════════════════════
 async function pkceChallenge(){
   const verifier = Array.from(crypto.getRandomValues(new Uint8Array(32))).map(b=>b.toString(16).padStart(2,'0')).join('');
-  sessionStorage.setItem('od_pkce_verifier', verifier);
+  sessionStorage.setItem('gd_pkce_verifier', verifier);
   const data = new TextEncoder().encode(verifier);
   const hash = await crypto.subtle.digest('SHA-256', data);
   const challenge = btoa(String.fromCharCode(...new Uint8Array(hash))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
@@ -2456,109 +2405,132 @@ async function pkceChallenge(){
 }
 
 async function odSignIn(){
-  const msgEl = document.getElementById('pptOdAuthMsg');
   try{
-    if(msgEl) msgEl.textContent = 'Abriendo ventana de Microsoft...';
-    const { verifier, challenge } = await pkceChallenge();
+    const { challenge } = await pkceChallenge();
     const state = Math.random().toString(36).slice(2);
-    sessionStorage.setItem('od_state', state);
+    sessionStorage.setItem('gd_state', state);
+    sessionStorage.setItem('gd_return', 'ppt');
     const params = new URLSearchParams({
-      client_id: OD_CLIENT_ID, response_type:'code',
-      redirect_uri:'https://registrosemanal.netlify.app/reportes',
-      scope: OD_SCOPES, state,
-      code_challenge: challenge, code_challenge_method:'S256', prompt:'select_account'
+      client_id:     GD_CLIENT_ID,
+      redirect_uri:  GD_REDIRECT,
+      response_type: 'code',
+      scope:         GD_SCOPES,
+      state,
+      code_challenge:        challenge,
+      code_challenge_method: 'S256',
+      access_type:   'offline',
+      prompt:        'consent'
     });
-    const popup = window.open(`https://login.microsoftonline.com/${OD_TENANT}/oauth2/v2.0/authorize?${params}`,'msauth','width=500,height=650,left=400,top=100');
-    if(!popup) throw new Error('El navegador bloqueó el popup. Permite popups para esta página.');
-    await new Promise((resolve,reject)=>{
-      const iv = setInterval(async()=>{
-        try{
-          if(popup.closed){ clearInterval(iv); reject(new Error('Ventana cerrada')); return; }
-          let href=''; try{ href=popup.location.href; }catch(e){ return; }
-          if(!href.includes('registrosemanal.netlify.app')) return;
-          clearInterval(iv); popup.close();
-          const url=new URL(href);
-          const code=url.searchParams.get('code');
-          const err=url.searchParams.get('error');
-          if(err) throw new Error(url.searchParams.get('error_description')||err);
-          if(url.searchParams.get('state')!==sessionStorage.getItem('od_state')) throw new Error('State mismatch');
-          if(!code) throw new Error('No se recibió código');
-          if(msgEl) msgEl.textContent='Obteniendo acceso...';
-          const tr=await fetch(`https://login.microsoftonline.com/${OD_TENANT}/oauth2/v2.0/token`,{
-            method:'POST', headers:{'Content-Type':'application/x-www-form-urlencoded'},
-            body:new URLSearchParams({client_id:OD_CLIENT_ID,grant_type:'authorization_code',code,redirect_uri:'https://registrosemanal.netlify.app/reportes',code_verifier:verifier,scope:OD_SCOPES})
-          });
-          if(!tr.ok) throw new Error(await tr.text());
-          const tokens=await tr.json();
-          _odToken=tokens.access_token;
-          if(tokens.refresh_token) sessionStorage.setItem('od_refresh',tokens.refresh_token);
-          const userRes=await fetch('https://graph.microsoft.com/v1.0/me',{headers:{'Authorization':'Bearer '+_odToken}});
-          const user=await userRes.json();
-          _odAccount={name:user.displayName||user.userPrincipalName,username:user.userPrincipalName};
-          odUpdateUI();
-          if(_pptFile) document.getElementById('pptUploadBtn').style.display='inline-flex';
-          toast('OneDrive conectado ✓','success');
-          resolve();
-        }catch(err){ clearInterval(iv); reject(err); }
-      },500);
+    window.location.href = `https://accounts.google.com/o/oauth2/v2/auth?${params}`;
+  }catch(e){ toast('Error: '+e.message,'error'); }
+}
+
+async function gdHandleRedirect(){
+  const url   = new URL(window.location.href);
+  const code  = url.searchParams.get('code');
+  const state = url.searchParams.get('state');
+  const error = url.searchParams.get('error');
+  if(!code && !error) return;
+
+  window.history.replaceState({}, document.title, window.location.pathname);
+
+  if(error){ toast('Error de autenticación: '+error,'error'); return; }
+  if(state !== sessionStorage.getItem('gd_state')){ toast('Error de seguridad','error'); return; }
+
+  const verifier = sessionStorage.getItem('gd_pkce_verifier');
+  if(!verifier){ toast('Sesión expirada, intenta de nuevo','error'); return; }
+
+  try{
+    toast('Conectando con Google Drive...','success');
+    // Exchange code for token via a CORS-friendly proxy approach
+    // Google requires client_secret for server-side but we use implicit workaround:
+    // Use token endpoint with PKCE
+    const tokenRes = await fetch('https://oauth2.googleapis.com/token',{
+      method:'POST',
+      headers:{'Content-Type':'application/x-www-form-urlencoded'},
+      body: new URLSearchParams({
+        code,
+        client_id:     GD_CLIENT_ID,
+        client_secret: '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',
+        redirect_uri:  GD_REDIRECT,
+        grant_type:    'authorization_code',
+        code_verifier: verifier
+      })
     });
+    if(!tokenRes.ok){ const t=await tokenRes.text(); throw new Error(t); }
+    const tokens = await tokenRes.json();
+    _gdToken = tokens.access_token;
+    if(tokens.refresh_token) sessionStorage.setItem('gd_refresh', tokens.refresh_token);
+
+    // Get user info
+    const userRes = await fetch('https://www.googleapis.com/oauth2/v2/userinfo',{
+      headers:{'Authorization':'Bearer '+_gdToken}
+    });
+    const user = await userRes.json();
+    _gdAccount = { name: user.name||user.email, email: user.email };
+    sessionStorage.setItem('gd_account', JSON.stringify(_gdAccount));
+
+    gdUpdateUI();
+    toast('Google Drive conectado ✓','success');
+    if(sessionStorage.getItem('gd_return')==='ppt'){
+      sessionStorage.removeItem('gd_return');
+      setTimeout(()=>openPptModal(), 400);
+    }
   }catch(e){
     console.error(e);
-    if(msgEl) msgEl.textContent='⚠️ '+e.message;
-    toast('Error: '+e.message,'error');
+    toast('Error al conectar con Google: '+e.message,'error');
   }
 }
 
 async function odSignOut(){
-  _odAccount=null; _odToken=null;
-  sessionStorage.removeItem('od_refresh');
-  odUpdateUI();
+  _gdAccount=null; _gdToken=null;
+  sessionStorage.removeItem('gd_refresh');
+  sessionStorage.removeItem('gd_account');
+  gdUpdateUI();
   document.getElementById('pptUploadBtn').style.display='none';
-  toast('Sesión cerrada','success');
+  toast('Sesión de Google cerrada','success');
 }
 
-async function odEnsureToken(){
-  if(_odToken) return _odToken;
-  const refresh=sessionStorage.getItem('od_refresh');
+async function gdEnsureToken(){
+  if(_gdToken) return _gdToken;
+  const refresh = sessionStorage.getItem('gd_refresh');
   if(!refresh) return null;
   try{
-    const res=await fetch(`https://login.microsoftonline.com/${OD_TENANT}/oauth2/v2.0/token`,{
-      method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},
-      body:new URLSearchParams({client_id:OD_CLIENT_ID,grant_type:'refresh_token',refresh_token:refresh,scope:OD_SCOPES})
+    const res = await fetch('https://oauth2.googleapis.com/token',{
+      method:'POST',
+      headers:{'Content-Type':'application/x-www-form-urlencoded'},
+      body: new URLSearchParams({
+        client_id:     GD_CLIENT_ID,
+        client_secret: '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',
+        refresh_token: refresh,
+        grant_type:    'refresh_token'
+      })
     });
     if(!res.ok) return null;
-    const t=await res.json();
-    _odToken=t.access_token;
-    if(t.refresh_token) sessionStorage.setItem('od_refresh',t.refresh_token);
-    return _odToken;
+    const t = await res.json();
+    _gdToken = t.access_token;
+    return _gdToken;
   }catch(e){ return null; }
 }
 
-function odUpdateUI(){
-  const authPane=document.getElementById('pptOdAuthPane');
-  const userPane=document.getElementById('pptOdUserPane');
+function gdUpdateUI(){
+  const authPane = document.getElementById('pptOdAuthPane');
+  const userPane = document.getElementById('pptOdUserPane');
   if(!authPane||!userPane) return;
-  if(_odAccount){
+  if(_gdAccount){
+    sessionStorage.setItem('gd_account', JSON.stringify(_gdAccount));
     authPane.style.display='none'; userPane.style.display='flex';
-    const nm=document.getElementById('pptOdUserName');
-    if(nm) nm.textContent=_odAccount.name||_odAccount.username||'Usuario Microsoft';
-    // Try to restore token from session
-    if(!_odToken) odEnsureToken().then(t=>{ if(t && _pptFile) document.getElementById('pptUploadBtn').style.display='inline-flex'; });
+    const nm = document.getElementById('pptOdUserName');
+    if(nm) nm.textContent = _gdAccount.name||_gdAccount.email||'Usuario Google';
+    if(_pptFile) document.getElementById('pptUploadBtn').style.display='inline-flex';
   }else{
-    // Try silent restore from refresh token
-    const refresh=sessionStorage.getItem('od_refresh');
-    if(refresh){
-      odEnsureToken().then(t=>{
-        if(t){
-          // We have a valid token but no account info yet — show as connected
-          _odAccount={name:'Microsoft', username:''};
-          odUpdateUI();
-        }
-      });
-    }
+    sessionStorage.removeItem('gd_account');
     authPane.style.display='flex'; userPane.style.display='none';
   }
 }
+
+// alias so existing HTML calls work
+function odUpdateUI(){ gdUpdateUI(); }
 
 </script>
 
