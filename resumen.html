@@ -330,18 +330,9 @@ document.addEventListener('click',e=>{
     <div class="mbody" style="padding-top:0;gap:0">
       <input type="hidden" id="mId">
 
-      <!-- CAMPOS COMUNES: área, mes, año, autor -->
+      <!-- CAMPOS: mes, año, autor -->
       <div style="padding:16px 0 14px;display:flex;flex-direction:column;gap:12px;border-bottom:1px solid var(--b1);margin-bottom:14px">
-        <div class="frow3">
-          <div class="field">
-            <label>Área *</label>
-            <select id="mArea">
-              <option value="">Seleccionar...</option>
-              <option>CEDIS</option><option>CREO</option><option>ATN</option>
-              <option>MKT</option><option>ALMACÉN</option><option>SISTEMAS</option>
-              
-            </select>
-          </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px">
           <div class="field">
             <label>Mes *</label>
             <select id="mMes">
@@ -355,23 +346,16 @@ document.addEventListener('click',e=>{
             <label>Año *</label>
             <select id="mAnio"><option value="">Año...</option></select>
           </div>
+          <div class="field">
+            <label>Autor / Responsable</label>
+            <input type="text" id="mAutor" placeholder="Nombre">
+          </div>
         </div>
-        <div class="field">
-          <label>Autor / Responsable</label>
-          <input type="text" id="mAutor" placeholder="Nombre del responsable del área">
-        </div>
+        <input type="hidden" id="mArea" value="DIRECCIÓN">
 
         <!-- TABS -->
         <div class="tab-bar">
-          <button class="tab-btn active" id="tab-sec" onclick="switchTab('secciones')">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
-            Por secciones
-          </button>
-          <button class="tab-btn" id="tab-libre" onclick="switchTab('libre')">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
-            Texto libre
-          </button>
-          <button class="tab-btn" id="tab-diapositiva" onclick="switchTab('diapositiva')">
+          <button class="tab-btn active" id="tab-diapositiva" onclick="switchTab('diapositiva')">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
             Diapositiva
           </button>
@@ -379,55 +363,19 @@ document.addEventListener('click',e=>{
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
             Word
           </button>
-        </div>
-      </div>
-
-      <!-- TAB: SECCIONES -->
-      <div id="pane-secciones">
-        <div id="seccionesList"></div>
-        <button class="btn bghost bsm" id="btnAddSec" style="width:100%;justify-content:center;border-style:dashed;margin-bottom:14px" onclick="addSeccion()">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-          Añadir sección
-        </button>
-        <div class="field">
-          <label>Imágenes generales <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--t3)">(sin sección específica)</span></label>
-          <div class="global-img-zone" id="zone_general"
-            onclick="document.getElementById('inp_general').click()"
-            ondragover="secDragOver(event,'general')" ondragleave="secDragLeave('general')" ondrop="secDrop(event,'general')"
-            tabindex="0" onpaste="handlePaste(event,'general')" style="outline:none">
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="opacity:.35;margin-bottom:6px"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
-            <div style="font-size:12px;color:var(--t2)">Arrastra, <span style="color:var(--ac);font-weight:600">haz clic</span> o pega con <strong>Ctrl+V</strong></div>
-            <div style="font-size:11px;color:var(--t3);margin-top:3px">PNG, JPG hasta 10MB</div>
-          </div>
-          <input type="file" id="inp_general" accept="image/*" multiple style="display:none" onchange="secImgSelect(this.files,'general')">
-          <div id="prev_general" class="img-previews"></div>
-        </div>
-      </div>
-
-      <!-- TAB: TEXTO LIBRE -->
-      <div id="pane-libre" style="display:none;flex-direction:column;gap:14px">
-        <div class="field">
-          <label>Contenido del reporte</label>
-          <textarea id="mTextoLibre" placeholder="Escribe aquí el contenido del reporte libremente... Puedes pegar imágenes directamente con Ctrl+V." style="min-height:220px;line-height:1.8"></textarea>
-        </div>
-        <div class="field">
-          <label>Imágenes</label>
-          <div class="global-img-zone" id="zone_libre"
-            onclick="document.getElementById('inp_libre').click()"
-            ondragover="secDragOver(event,'libre')" ondragleave="secDragLeave('libre')" ondrop="secDrop(event,'libre')"
-            tabindex="0" onpaste="handlePaste(event,'libre')" style="outline:none">
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="opacity:.35;margin-bottom:6px"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
-            <div style="font-size:12px;color:var(--t2)">Arrastra, <span style="color:var(--ac);font-weight:600">haz clic</span> o pega con <strong>Ctrl+V</strong></div>
-            <div style="font-size:11px;color:var(--t3);margin-top:3px">PNG, JPG hasta 10MB</div>
-          </div>
-          <input type="file" id="inp_libre" accept="image/*" multiple style="display:none" onchange="secImgSelect(this.files,'libre')">
-          <div id="prev_libre" class="img-previews"></div>
+          <button class="tab-btn" id="tab-pdf" onclick="switchTab('pdf')">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="15" y2="17"/></svg>
+            PDF
+          </button>
         </div>
       </div>
 
       <!-- TAB: DIAPOSITIVA -->
-      <div id="pane-diapositiva" style="display:none;flex-direction:column;gap:12px;padding-top:4px">
-        <p style="font-size:13px;color:var(--t2);line-height:1.6;margin:0">Sube el archivo <strong>.pptx</strong> o <strong>.pdf</strong> del reporte. Se guardará en Google Drive y se mostrará directamente en la página.</p>
+      <div id="pane-diapositiva" style="flex-direction:column;gap:12px;padding-top:4px">
+        <div class="field">
+          <label>Descripción <span style="font-weight:400;color:var(--t3)">(opcional)</span></label>
+          <textarea id="mDescDiapositiva" placeholder="Añade un texto descriptivo o resumen del contenido..." style="min-height:70px;line-height:1.7;resize:none"></textarea>
+        </div>
         <!-- Auth: no logado -->
         <div id="pptInlineAuthPane" style="display:flex;flex-direction:column;align-items:center;gap:10px;padding:16px;border:1px solid var(--b2);border-radius:var(--rs);background:var(--s2)">
           <div style="text-align:center">
@@ -439,7 +387,6 @@ document.addEventListener('click',e=>{
             Iniciar sesión con Google
           </button>
         </div>
-        <!-- Auth: logado -->
         <div id="pptInlineUserPane" style="display:none;flex-direction:column;gap:10px">
           <div class="od-user-pill">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#4285f4" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
@@ -452,14 +399,13 @@ document.addEventListener('click',e=>{
             ondragleave="this.classList.remove('over')"
             ondrop="event.preventDefault();this.classList.remove('over');pptInlineFileSelect(event.dataTransfer.files[0])">
             <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="opacity:.35"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/><path d="M12 16v-6"/><path d="M9 13l3-3 3 3"/></svg>
-            <div style="font-size:13px;color:var(--t2)">Arrastra tu archivo aquí o <span style="color:#4285f4;font-weight:600">haz clic</span></div>
-            <div id="pptInlineDropLabel" style="font-size:12px;color:var(--t3)">Archivos .pptx, .ppt o .pdf</div>
+            <div style="font-size:13px;color:var(--t2)">Arrastra tu <strong>.pptx</strong> aquí o <span style="color:#4285f4;font-weight:600">haz clic</span></div>
+            <div id="pptInlineDropLabel" style="font-size:12px;color:var(--t3)">Solo archivos .pptx</div>
           </div>
-          <input type="file" id="pptInlineInput" accept=".pptx,.ppt,.pdf" style="display:none" onchange="pptInlineFileSelect(this.files[0])">
+          <input type="file" id="pptInlineInput" accept=".pptx,.ppt" style="display:none" onchange="pptInlineFileSelect(this.files[0])">
           <div id="pptInlineProgress" style="display:none;flex-direction:column;gap:4px">
             <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--t3)">
-              <span id="pptInlineProgLabel">Subiendo a Google Drive...</span>
-              <span id="pptInlineProgPct">0%</span>
+              <span id="pptInlineProgLabel">Subiendo a Google Drive...</span><span id="pptInlineProgPct">0%</span>
             </div>
             <div class="ppt-prog"><div class="ppt-prog-bar od" id="pptInlineProgBar" style="width:0%"></div></div>
           </div>
@@ -468,9 +414,10 @@ document.addEventListener('click',e=>{
 
       <!-- TAB: WORD -->
       <div id="pane-word" style="display:none;flex-direction:column;gap:12px;padding-top:4px">
-        <p style="font-size:13px;color:var(--t2);line-height:1.6;margin:0">El archivo <strong>.docx</strong> se sube a tu Google Drive y queda disponible para que todos puedan verlo y descargarlo directamente desde la web.</p>
-
-        <!-- Auth: no logado -->
+        <div class="field">
+          <label>Descripción <span style="font-weight:400;color:var(--t3)">(opcional)</span></label>
+          <textarea id="mDescWord" placeholder="Añade un texto descriptivo o resumen del contenido..." style="min-height:70px;line-height:1.7;resize:none"></textarea>
+        </div>
         <div id="wAuthPane" style="display:flex;flex-direction:column;align-items:center;gap:10px;padding:16px;border:1px solid var(--b2);border-radius:var(--rs);background:var(--s2)">
           <div style="text-align:center">
             <div style="font-size:14px;font-weight:600;color:var(--t1)">Conectar con Google Drive</div>
@@ -481,8 +428,6 @@ document.addEventListener('click',e=>{
             Iniciar sesión con Google
           </button>
         </div>
-
-        <!-- Auth: logado -->
         <div id="wUserPane" style="display:none;flex-direction:column;gap:10px">
           <div class="od-user-pill">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#4285f4" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
@@ -496,15 +441,55 @@ document.addEventListener('click',e=>{
             ondrop="event.preventDefault();this.classList.remove('over');wHandleFile(event.dataTransfer.files[0])">
             <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="opacity:.35"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><path d="M12 18v-6"/><path d="M9 15l3-3 3 3"/></svg>
             <div style="font-size:13px;color:var(--t2)">Arrastra tu <strong>.docx</strong> aquí o <span style="color:#4285f4;font-weight:600">haz clic</span></div>
-            <div id="wDropLabel" style="font-size:12px;color:var(--t3)">El archivo se guardará en Google Drive → carpeta <em>Reportes Omnilife</em></div>
+            <div id="wDropLabel" style="font-size:12px;color:var(--t3)">El archivo se guardará en Google Drive</div>
           </div>
           <input type="file" id="wFileInput" accept=".docx,.doc" style="display:none" onchange="wHandleFile(this.files[0])">
           <div id="wProgress" style="display:none;flex-direction:column;gap:4px">
             <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--t3)">
-              <span id="wProgressLabel">Subiendo a Google Drive...</span>
-              <span id="wProgressPct">0%</span>
+              <span id="wProgressLabel">Subiendo a Google Drive...</span><span id="wProgressPct">0%</span>
             </div>
             <div class="ppt-prog"><div class="ppt-prog-bar od" id="wProgressBar" style="width:0%"></div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB: PDF -->
+      <div id="pane-pdf" style="display:none;flex-direction:column;gap:12px;padding-top:4px">
+        <div class="field">
+          <label>Descripción <span style="font-weight:400;color:var(--t3)">(opcional)</span></label>
+          <textarea id="mDescPdf" placeholder="Añade un texto descriptivo o resumen del contenido..." style="min-height:70px;line-height:1.7;resize:none"></textarea>
+        </div>
+        <div id="pdfAuthPane" style="display:flex;flex-direction:column;align-items:center;gap:10px;padding:16px;border:1px solid var(--b2);border-radius:var(--rs);background:var(--s2)">
+          <div style="text-align:center">
+            <div style="font-size:14px;font-weight:600;color:var(--t1)">Conectar con Google Drive</div>
+            <div style="font-size:12px;color:var(--t3);margin-top:3px">Inicia sesión con tu Gmail para subir el archivo</div>
+          </div>
+          <button class="od-sign-btn" style="background:#4285f4" onclick="odSignIn()">
+            <svg width="16" height="16" viewBox="0 0 24 24"><path fill="#fff" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#fff" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#fff" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/><path fill="#fff" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+            Iniciar sesión con Google
+          </button>
+        </div>
+        <div id="pdfUserPane" style="display:none;flex-direction:column;gap:10px">
+          <div class="od-user-pill">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#4285f4" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+            <span class="od-user-name" id="pdfUserName"></span>
+            <button onclick="odSignOut();pdfUpdateUI()" style="font-size:11px;padding:2px 8px;background:transparent;border:1px solid var(--b2);border-radius:4px;color:var(--t3);cursor:pointer">Cerrar sesión</button>
+          </div>
+          <div class="ppt-drop od-mode" id="pdfDropzone"
+            onclick="document.getElementById('pdfFileInput').click()"
+            ondragover="event.preventDefault();this.classList.add('over')"
+            ondragleave="this.classList.remove('over')"
+            ondrop="event.preventDefault();this.classList.remove('over');pdfHandleFile(event.dataTransfer.files[0])">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="opacity:.35"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><path d="M12 18v-6"/><path d="M9 15l3-3 3 3"/></svg>
+            <div style="font-size:13px;color:var(--t2)">Arrastra tu <strong>.pdf</strong> aquí o <span style="color:#4285f4;font-weight:600">haz clic</span></div>
+            <div id="pdfDropLabel" style="font-size:12px;color:var(--t3)">El archivo se guardará en Google Drive</div>
+          </div>
+          <input type="file" id="pdfFileInput" accept=".pdf" style="display:none" onchange="pdfHandleFile(this.files[0])">
+          <div id="pdfProgress" style="display:none;flex-direction:column;gap:4px">
+            <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--t3)">
+              <span id="pdfProgressLabel">Subiendo a Google Drive...</span><span id="pdfProgressPct">0%</span>
+            </div>
+            <div class="ppt-prog"><div class="ppt-prog-bar od" id="pdfProgressBar" style="width:0%"></div></div>
           </div>
         </div>
       </div>
@@ -958,19 +943,18 @@ function renderSecciones(){
 
 
 // ── Tab switching ──
-let activeTab = 'secciones'; // 'secciones' | 'libre'
+let activeTab = 'diapositiva';
 function switchTab(tab){
   activeTab = tab;
-  document.getElementById('pane-secciones').style.display   = tab==='secciones'   ? ''     : 'none';
-  document.getElementById('pane-libre').style.display        = tab==='libre'        ? 'flex' : 'none';
-  document.getElementById('pane-diapositiva').style.display  = tab==='diapositiva'  ? 'flex' : 'none';
-  document.getElementById('pane-word').style.display         = tab==='word'         ? 'flex' : 'none';
-  document.getElementById('tab-sec').classList.toggle('active',         tab==='secciones');
-  document.getElementById('tab-libre').classList.toggle('active',       tab==='libre');
-  document.getElementById('tab-diapositiva').classList.toggle('active', tab==='diapositiva');
-  document.getElementById('tab-word').classList.toggle('active',        tab==='word');
+  ['diapositiva','word','pdf'].forEach(t=>{
+    const pane = document.getElementById('pane-'+t);
+    const btn  = document.getElementById('tab-'+t);
+    if(pane) pane.style.display = t===tab ? 'flex' : 'none';
+    if(btn)  btn.classList.toggle('active', t===tab);
+  });
   if(tab==='diapositiva'){ pptInlineUpdateUI(); pptAreaChange(); }
   if(tab==='word') wUpdateUI();
+  if(tab==='pdf')  pdfUpdateUI();
 }
 
 function addSeccion(label='', text=''){
@@ -1273,6 +1257,7 @@ function renderView(id){
               </div>
               <div>
                 <div style="font-size:13px;font-weight:600;color:var(--t1)">${esc(f.name)}</div>
+                ${f.descripcion?`<div style="font-size:12px;color:var(--t2);margin-top:2px;line-height:1.5">${esc(f.descripcion)}</div>`:''}
                 <div style="font-size:11px;color:var(--t3)">${f.uploadedAt?new Date(f.uploadedAt).toLocaleDateString('es-ES',{day:'2-digit',month:'long',year:'numeric'}):''} ${f.size?'· '+(f.size/1024/1024).toFixed(1)+' MB':''}</div>
               </div>
             </div>
@@ -1325,182 +1310,124 @@ function populateYearSel(selId, defaultYear){
 //  MODAL — NEW / EDIT
 // ═══════════════════════════════════
 function openModal(id=null){
-  const r=id?reportes.find(x=>x.id===id):null;
-  document.getElementById('mTitle').textContent=r?'Editar Resumen':'Nuevo Resumen';
-  document.getElementById('mId').value=r?r.id:'';
-  document.getElementById('mArea').value=r?(r.area||'DIRECCIÓN'):'DIRECCIÓN';
-  document.getElementById('mMes').value=r?(r.mes||''):MONTHS[new Date().getMonth()];
-  populateYearSel('mAnio', r?r.anio:null);
+  const r = id ? reportes.find(x=>x.id===id) : null;
+  document.getElementById('mTitle').textContent = r ? 'Editar Resumen' : 'Nuevo Resumen';
+  document.getElementById('mId').value = r ? r.id : '';
+  document.getElementById('mArea').value = 'DIRECCIÓN';
+  document.getElementById('mMes').value = r ? (r.mes||'') : MONTHS[new Date().getMonth()];
+  populateYearSel('mAnio', r ? r.anio : null);
   if(r && r.anio) document.getElementById('mAnio').value = r.anio;
-  document.getElementById('mAutor').value=r?(r.autor||''):'';
+  document.getElementById('mAutor').value = r ? (r.autor||'') : '';
 
-  // Restore tab mode
-  const savedTab = r ? (r.modoLibre ? 'libre' : 'secciones') : 'secciones';
-  activeTab = savedTab;
-  switchTab(savedTab);
+  // Reset description fields
+  ['mDescDiapositiva','mDescWord','mDescPdf'].forEach(id=>{
+    const el = document.getElementById(id);
+    if(el) el.value = '';
+  });
 
-  // Texto libre
-  document.getElementById('mTextoLibre').value = r ? (r.textoLibre||'') : '';
+  // Reset file uploads
+  _pptInlineFile = null; _wFile = null; _pdfFile = null;
+  wReset(); pdfReset();
+  const inlineDrop = document.getElementById('pptInlineDrop');
+  if(inlineDrop){ inlineDrop.classList.remove('has-file'); }
+  const inlineLbl = document.getElementById('pptInlineDropLabel');
+  if(inlineLbl) inlineLbl.textContent = 'Archivos .pptx, .ppt o .pdf';
 
-  // Build dynamic sections
-  customSections = buildSections(r);
-  pendingImages = {};
-  customSections.forEach(s=>{ pendingImages[s.id]=[]; });
-  pendingImages['general'] = [];
-  pendingImages['libre'] = [];
-  renderSecciones();
-  wirePasteLibre();
+  document.getElementById('uploadProgress').style.display = 'none';
 
-  // General images preview
-  const prevGen=document.getElementById('prev_general');
-  if(prevGen){
-    prevGen.innerHTML='';
-    (r?r['imagenes_general']||[]:[]).forEach(img=>{
-      const d=document.createElement('div');d.className='img-prev';
-      d.innerHTML=`<img src="${img.url||img}" alt="${esc(img.name||'')}">`;
-      prevGen.appendChild(d);
-    });
-  }
-  const prevLibre=document.getElementById('prev_libre');
-  if(prevLibre){
-    prevLibre.innerHTML='';
-    (r?r['imagenes_libre']||[]:[]).forEach(img=>{
-      const d=document.createElement('div');d.className='img-prev';
-      d.innerHTML=`<img src="${img.url||img}" alt="${esc(img.name||'')}">`;
-      prevLibre.appendChild(d);
-    });
-  }
-  document.getElementById('uploadProgress').style.display='none';
+  activeTab = 'diapositiva';
+  switchTab('diapositiva');
+
   document.getElementById('bdModal').classList.add('open');
-
 }
-function closeModal(){ document.getElementById('bdModal').classList.remove('open'); pendingImages={}; customSections=[]; }
-function arResize(el){el.style.height='auto';el.style.height=el.scrollHeight+'px';}
+
+function closeModal(){
+  document.getElementById('bdModal').classList.remove('open');
+}
+
+function arResize(el){ el.style.height='auto'; el.style.height=el.scrollHeight+'px'; }
 
 // ═══════════════════════════════════
 //  SAVE
 // ═══════════════════════════════════
 async function saveReporte(){
-  const area='DIRECCIÓN';
-  const mes=document.getElementById('mMes').value;
-  const anio=parseInt(document.getElementById('mAnio').value);
-  if(!area||!mes||!anio){toast('Área, mes y año son obligatorios','error');return;}
+  const area = 'DIRECCIÓN';
+  const mes  = document.getElementById('mMes').value;
+  const anio = parseInt(document.getElementById('mAnio').value);
+  if(!mes || !anio){ toast('Mes y año son obligatorios','error'); return; }
 
-  const editId=document.getElementById('mId').value;
-  const tempId=editId||('loc_'+Date.now());
+  const editId = document.getElementById('mId').value;
 
-  // Collect section data from DOM
-  const savedSections = customSections.map(sec=>({
-    id: sec.id,
-    label: document.getElementById('slabel_'+sec.id)?.value.trim() || sec.label,
-    text: document.getElementById('m_'+sec.id)?.value.trim() || '',
-    images: sec.images || [],
-    isDefault: sec.isDefault
-  }));
-
-  // Upload pending images per section + general
-  const allSids = [...customSections.map(s=>s.id), 'general'];
-  const allPending = allSids.flatMap(sid=>(pendingImages[sid]||[]).map(img=>({...img,section:sid})));
-  const uploadedPerSec = {};
-  allSids.forEach(sid=>{ uploadedPerSec[sid]=[]; });
-
-  if(allPending.length){
-    const prog=document.getElementById('uploadProgress');
-    const bar=document.getElementById('uploadBar');
-    prog.style.display='';
-    for(let i=0;i<allPending.length;i++){
-      bar.style.width=`${Math.round((i/allPending.length)*100)}%`;
-      const img=allPending[i];
-      // Read file as base64 for reliable Word export (avoids CORS issues with Storage URLs)
-      const b64=await fileToBase64(img.file);
-      let url=img.previewUrl;
-      if(window._fe&&window._st) url=await uploadImage(img.file,tempId)||url;
-      uploadedPerSec[img.section].push({url,name:img.name,section:img.section,b64});
-    }
-    bar.style.width='100%';
-    setTimeout(()=>{prog.style.display='none';bar.style.width='0%';},600);
-  }
-
-  // Merge existing saved images with newly uploaded
-  savedSections.forEach(sec=>{
-    sec.images = [...(sec.images||[]), ...(uploadedPerSec[sec.id]||[])];
-  });
-
-  // Build backward-compat fields for the 5 default sections
-  const getSecText = sid => savedSections.find(s=>s.id===sid)?.text||'';
-  const getSecImgs = sid => savedSections.find(s=>s.id===sid)?.images||[];
-  const existingGeneral = editId ? (reportes.find(r=>r.id===editId)?.imagenes_general||[]) : [];
-
-  const data={
-    area, mes, anio,
-    autor: document.getElementById('mAutor').value.trim(),
-    // Default section texts
-    logros: getSecText('logros'),
-    desafios: getSecText('desafios'),
-    capacitaciones: getSecText('capacitaciones'),
-    errores: getSecText('errores'),
-    otros: getSecText('otros'),
-    // Per-section images (default)
-    imagenes_logros: getSecImgs('logros'),
-    imagenes_desafios: getSecImgs('desafios'),
-    imagenes_capacitaciones: getSecImgs('capacitaciones'),
-    imagenes_errores: getSecImgs('errores'),
-    imagenes_otros: getSecImgs('otros'),
-    // General images
-    imagenes_general: [...existingGeneral, ...(uploadedPerSec['general']||[])],
-    // Extra custom sections
-    extraSections: savedSections.filter(s=>!s.isDefault),
-    // Flat list for sidebar count
-    imagenes: savedSections.flatMap(s=>s.images).concat(existingGeneral, uploadedPerSec['general']||[]),
-    // Texto libre tab
-    modoLibre: activeTab === 'libre',
-    textoLibre: activeTab === 'libre' ? document.getElementById('mTextoLibre').value.trim() : (editId ? (reportes.find(x=>x.id===editId)?.textoLibre||'') : ''),
-    imagenes_libre: [...(editId ? (reportes.find(r=>r.id===editId)?.imagenes_libre||[]) : []), ...(uploadedPerSec['libre']||[])],
-  };
-
-  // Upload inline PPT if selected
+  // Collect Drive file references
   let presentaciones = editId ? (reportes.find(r=>r.id===editId)?.presentaciones||[]) : [];
-  if(_pptInlineFile){
+
+  // PPT (Diapositiva tab)
+  if(activeTab === 'diapositiva' && _pptInlineFile && _gdToken){
     const pptRef = await pptInlineUpload(area, mes, anio, document.getElementById('mAutor').value.trim());
-    if(pptRef) presentaciones = [...presentaciones, pptRef];
+    if(pptRef){
+      const desc = document.getElementById('mDescDiapositiva')?.value?.trim()||'';
+      if(desc) pptRef.descripcion = desc;
+      presentaciones = [...presentaciones, pptRef];
+    }
     _pptInlineFile = null;
   }
 
-  // Upload Word to Drive if word tab is active and file selected
+  // Word tab
   if(activeTab === 'word' && _wFile && _gdToken){
     const wRef = await wUploadToDrive(area, mes, anio);
-    if(wRef) presentaciones = [...presentaciones, wRef];
+    if(wRef){
+      const desc = document.getElementById('mDescWord')?.value?.trim()||'';
+      if(desc) wRef.descripcion = desc;
+      presentaciones = [...presentaciones, wRef];
+    }
+    _wFile = null;
   }
 
+  // PDF tab
+  if(activeTab === 'pdf' && _pdfFile && _gdToken){
+    const pdfRef = await pdfUploadToDrive(area, mes, anio);
+    if(pdfRef){
+      const desc = document.getElementById('mDescPdf')?.value?.trim()||'';
+      if(desc) pdfRef.descripcion = desc;
+      presentaciones = [...presentaciones, pdfRef];
+    }
+    _pdfFile = null;
+  }
+
+  const data = {
+    area, mes, anio,
+    autor: document.getElementById('mAutor').value.trim(),
+    presentaciones
+  };
+
   if(editId){
-    const idx=reportes.findIndex(r=>r.id===editId);
-    if(idx!==-1) reportes[idx]={...reportes[idx],...data, presentaciones};
-    await fbUp(editId,{...data, presentaciones});
-    activeId=editId;
+    const idx = reportes.findIndex(r=>r.id===editId);
+    if(idx!==-1) reportes[idx] = {...reportes[idx], ...data};
+    await fbUp(editId, data);
+    activeId = editId;
     toast('Resumen actualizado ✓','success');
   } else {
-    const tmp='loc_'+Date.now();
-    const rec={id:tmp,...data, presentaciones, createdAt:new Date().toISOString()};
-    const fbId=await fbAdd({...data, presentaciones});
-    if(fbId) rec.id=fbId;
+    const tmp = 'loc_'+Date.now();
+    const rec = {id:tmp, ...data, createdAt:new Date().toISOString()};
+    const fbId = await fbAdd(data);
+    if(fbId) rec.id = fbId;
     reportes.unshift(rec);
-    activeId=rec.id;
+    activeId = rec.id;
     toast('Resumen guardado ✓','success');
   }
 
-  pendingImages={};
   saveLocal();
   closeModal();
   renderSidebar();
   renderView(activeId);
-  // Reset inline PPT UI
-  _pptInlineFile = null;
+
+  // Reset uploads
+  _pptInlineFile = null; _wFile = null; _pdfFile = null;
+  wReset(); pdfReset();
   const inlineDrop = document.getElementById('pptInlineDrop');
   if(inlineDrop) inlineDrop.classList.remove('has-file');
   const inlineLbl = document.getElementById('pptInlineDropLabel');
   if(inlineLbl) inlineLbl.textContent = 'Archivos .pptx, .ppt o .pdf';
-  // Reset Word tab
-  wReset();
 }
 
 // ═══════════════════════════════════
@@ -2886,6 +2813,9 @@ function gdUpdateUI(){
   }
   // Word tab Google Drive section
   wUpdateUI();
+  // PDF tab
+  pdfUpdateUI();
+  const impAuth = document.getElementById('impGDriveAuth');
   const impUser = document.getElementById('impGDriveUser');
   const impName = document.getElementById('impGDriveUserName');
   if(impAuth && impUser){
@@ -2899,9 +2829,80 @@ function gdUpdateUI(){
 }
 
 // alias so existing HTML calls work
-function odUpdateUI(){ gdUpdateUI(); pptInlineUpdateUI(); wUpdateGDriveUI(); }
+function odUpdateUI(){ gdUpdateUI(); pptInlineUpdateUI(); wUpdateUI(); }
 
-// ── Word tab ─────────────────────────────────────────
+// ── PDF tab ───────────────────────────────────────────
+let _pdfFile = null;
+
+function pdfReset(){
+  _pdfFile = null;
+  const dz  = document.getElementById('pdfDropzone');
+  const lbl = document.getElementById('pdfDropLabel');
+  if(dz)  dz.classList.remove('has-file','over');
+  if(lbl) lbl.textContent = 'El archivo se guardará en Google Drive';
+  const inp = document.getElementById('pdfFileInput');
+  if(inp) inp.value = '';
+  const prog = document.getElementById('pdfProgress');
+  if(prog) prog.style.display = 'none';
+}
+
+function pdfUpdateUI(){
+  const a = document.getElementById('pdfAuthPane');
+  const u = document.getElementById('pdfUserPane');
+  const n = document.getElementById('pdfUserName');
+  if(!a||!u) return;
+  if(_gdAccount){ a.style.display='none'; u.style.display='flex'; if(n) n.textContent=_gdAccount.name||_gdAccount.email||'Google'; }
+  else { a.style.display='flex'; u.style.display='none'; }
+}
+
+function pdfHandleFile(file){
+  if(!file) return;
+  if(!file.name.toLowerCase().endsWith('.pdf')){ toast('Solo archivos .pdf','error'); return; }
+  if(file.size > 250*1024*1024){ toast('Máximo 250 MB','error'); return; }
+  _pdfFile = file;
+  const dz = document.getElementById('pdfDropzone');
+  const lbl = document.getElementById('pdfDropLabel');
+  if(dz) dz.classList.add('has-file');
+  if(lbl) lbl.textContent = `✓ ${file.name}  (${(file.size/1024/1024).toFixed(1)} MB)`;
+}
+
+async function pdfUploadToDrive(area, mes, anio){
+  if(!_pdfFile) return null;
+  const token = await gdEnsureToken();
+  if(!token) return null;
+  const prog=document.getElementById('pdfProgress'), bar=document.getElementById('pdfProgressBar');
+  const lbl=document.getElementById('pdfProgressLabel'), pctEl=document.getElementById('pdfProgressPct');
+  if(prog) prog.style.display='flex';
+  const setP=(p,l)=>{ if(bar) bar.style.width=p+'%'; if(lbl) lbl.textContent=l; if(pctEl) pctEl.textContent=p+'%'; };
+  try{
+    setP(10,'Buscando carpeta...');
+    const folderId = await gdGetOrCreateFolder();
+    setP(30,'Subiendo PDF...');
+    const safeArea = (area||'Resumen').replace(/[^a-zA-Z0-9]/g,'_');
+    const fileName = `${safeArea}_${mes}_${anio}_${_pdfFile.name}`;
+    const form = new FormData();
+    form.append('metadata', new Blob([JSON.stringify({name:fileName,parents:[folderId]})],{type:'application/json'}));
+    form.append('file', _pdfFile);
+    const res = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,name',
+      {method:'POST', headers:{'Authorization':'Bearer '+token}, body:form});
+    if(!res.ok) throw new Error(await res.text());
+    const uploaded = await res.json();
+    setP(80,'Generando enlace...');
+    await fetch(`https://www.googleapis.com/drive/v3/files/${uploaded.id}/permissions`,{
+      method:'POST', headers:{'Authorization':'Bearer '+token,'Content-Type':'application/json'},
+      body: JSON.stringify({role:'reader',type:'anyone'})
+    });
+    setP(100,'¡Listo!');
+    setTimeout(()=>{ if(prog) prog.style.display='none'; },2000);
+    return {
+      name:_pdfFile.name, source:'googledrive',
+      shareUrl:`https://drive.google.com/file/d/${uploaded.id}/view`,
+      downloadUrl:`https://drive.google.com/uc?export=download&id=${uploaded.id}`,
+      embedUrl:`https://drive.google.com/file/d/${uploaded.id}/preview`,
+      driveFileId:uploaded.id, size:_pdfFile.size, uploadedAt:new Date().toISOString()
+    };
+  }catch(e){ console.warn('PDF upload:',e); if(prog) prog.style.display='none'; toast('Error al subir PDF: '+e.message,'error'); return null; }
+}
 let _wFile = null;
 
 function wReset(){
