@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Reportes Mensuales — Omnilife España</title>
+<title>Resumen General — Omnilife España</title>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
@@ -261,7 +261,7 @@ document.addEventListener('click',e=>{
 <header>
   <!-- LEFT: logo + theme -->
   <div style="display:flex;align-items:center;gap:14px">
-    <div class="logo"><div class="pip"></div>Reportes Mensuales</div>
+    <div class="logo"><div class="pip"></div>Resumen General</div>
     <div class="tsw" onclick="toggleTheme()">
       <div class="tst" id="tst"><div class="tsd" id="tsd">🌙</div></div>
       <span id="tsl">Oscuro</span>
@@ -269,9 +269,9 @@ document.addEventListener('click',e=>{
   </div>
   <!-- RIGHT: action buttons + burger -->
   <div style="display:flex;align-items:center;gap:8px;flex-shrink:0">
-    <a href="resumen.html" class="btn bghost bsm" style="flex-shrink:0;text-decoration:none;color:var(--ac);border-color:rgba(200,241,53,.3)">
-      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
-      Resumen General
+    <a href="reportes.html" class="btn bghost bsm" style="flex-shrink:0;text-decoration:none">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+      Reportes de área
     </a>
     <button class="btn bghost bsm" onclick="openExportarTodos()" style="flex-shrink:0">
       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 10 12 5 7 10"/><line x1="12" y1="5" x2="12" y2="15"/><line x1="3" y1="15" x2="21" y2="15" stroke-dasharray="2 2" opacity=".4"/></svg>
@@ -279,7 +279,7 @@ document.addEventListener('click',e=>{
     </button>
     <button class="btn bprim bsm" onclick="openModal()" style="flex-shrink:0">
       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-      Nuevo Reporte
+      Nuevo Resumen
     </button>
     <div class="burger-wrap" id="burgerWrap">
       <button class="burger-btn" id="burgerBtn" onclick="toggleBurger()" title="Navegación">
@@ -304,12 +304,8 @@ document.addEventListener('click',e=>{
   <nav>
     <div class="nav-filters">
       <select class="sel" id="selAnio" onchange="renderSidebar()"></select>
-      <select class="sel" id="selMes" onchange="renderSidebar()">
-        <option value="">Todos los meses</option>
-      </select>
-      <select class="sel" id="selArea" onchange="renderSidebar()">
-        <option value="">Todas las áreas</option>
-      </select>
+      <input type="hidden" id="selMes" value="">
+      <input type="hidden" id="selArea" value="">
     </div>
     <div class="nav-list" id="navList"></div>
   </nav>
@@ -319,7 +315,7 @@ document.addEventListener('click',e=>{
     <div class="welcome">
       <svg width="52" height="52" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
       <h2>Sin reportes todavía</h2>
-      <p>Pulsa <strong>Nuevo Reporte</strong> para subir el reporte mensual de tu área</p>
+      <p>Pulsa <strong>Nuevo Resumen</strong> para subir el resumen mensual de todas las áreas</p>
     </div>
   </main>
 </div>
@@ -328,7 +324,7 @@ document.addEventListener('click',e=>{
 <div class="bd" id="bdModal" onmousedown="bdMD(event,'bdModal')" onmouseup="bdMU(event,'bdModal')">
   <div class="modal">
     <div class="mh">
-      <div class="mt" id="mTitle">Nuevo Reporte</div>
+      <div class="mt" id="mTitle">Nuevo Resumen</div>
       <button class="mx" onclick="closeModal()">×</button>
     </div>
     <div class="mbody" style="padding-top:0;gap:0">
@@ -556,11 +552,7 @@ document.addEventListener('click',e=>{
 
         <div class="frow3">
           <div class="field"><label>Área</label>
-            <select id="impArea">
-              <option value="">Seleccionar...</option>
-              <option>CEDIS</option><option>CREO</option><option>ATN</option>
-              <option>MKT</option><option>ALMACÉN</option><option>SISTEMAS</option>
-            </select>
+<input type="hidden" id="impArea" value="DIRECCIÓN">
           </div>
           <div class="field"><label>Mes</label>
             <select id="impMes">
@@ -619,35 +611,13 @@ document.addEventListener('click',e=>{
     </div>
     <div class="mbody" style="gap:14px">
 
-      <div class="frow">
-        <div class="field">
-          <label>Mes</label>
-          <select id="etMes" onchange="updateEtPreview()">
-            <option value="">Todos los meses</option>
-            <option>Enero</option><option>Febrero</option><option>Marzo</option><option>Abril</option>
-            <option>Mayo</option><option>Junio</option><option>Julio</option><option>Agosto</option>
-            <option>Septiembre</option><option>Octubre</option><option>Noviembre</option><option>Diciembre</option>
-          </select>
-        </div>
-        <div class="field">
-          <label>Año</label>
-          <select id="etAnio" onchange="updateEtPreview()"><option value="">Todos los años</option></select>
-        </div>
-      </div>
-
       <div class="field">
-        <label style="display:flex;align-items:center;justify-content:space-between">
-          <span>Áreas</span>
-          <span style="display:flex;gap:8px;text-transform:none;letter-spacing:0;font-weight:400">
-            <button onclick="etSelectAll(true)"  style="background:none;border:none;color:var(--ac);font-size:11px;cursor:pointer;padding:0">Todas</button>
-            <span style="color:var(--b2)">·</span>
-            <button onclick="etSelectAll(false)" style="background:none;border:none;color:var(--t3);font-size:11px;cursor:pointer;padding:0">Ninguna</button>
-          </span>
-        </label>
-        <div id="etAreasList" style="display:flex;flex-direction:column;gap:4px;max-height:200px;overflow-y:auto;background:var(--s2);border:1px solid var(--b2);border-radius:var(--rs);padding:8px 10px;margin-top:4px">
-          <span style="font-size:12px;color:var(--t3)">Cargando...</span>
-        </div>
+        <label>Año</label>
+        <select id="etAnio" onchange="updateEtPreview()"><option value="">Todos los años</option></select>
       </div>
+      <input type="hidden" id="etMes" value="">
+
+<!-- No area filter for dirección -->
 
       <!-- Preview de lo que se descargará -->
       <div id="etPreview" style="font-size:12px;color:var(--t3);line-height:2;background:var(--s2);border:1px solid var(--b1);border-radius:var(--rs);padding:10px 12px;display:none"></div>
@@ -681,11 +651,7 @@ document.addEventListener('click',e=>{
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
         <div class="field">
           <label>Área</label>
-          <select id="pptArea" onchange="pptAreaChange()" style="width:100%;background:var(--s2);border:1px solid var(--b2);border-radius:var(--rs);color:var(--t1);font-family:'DM Sans',sans-serif;font-size:13px;padding:8px 10px;outline:none;cursor:pointer;appearance:none;background-image:url('data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2211%22 height=%2211%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%23666%22 stroke-width=%222%22%3E%3Cpolyline points=%226 9 12 15 18 9%22/%3E%3C/svg%3E');background-repeat:no-repeat;background-position:right 9px center">
-            <option value="">— Área —</option>
-            <option>CEDIS</option><option>CREO</option><option>ATN</option>
-            <option>MKT</option><option>ALMACÉN</option><option>SISTEMAS</option>
-          </select>
+          <input type="hidden" id="pptArea" value="DIRECCIÓN">
         </div>
         <div class="field">
           <label>Mes</label>
@@ -787,9 +753,9 @@ document.addEventListener('click',e=>{
 //  STATE
 // ═══════════════════════════════════
 const MONTHS=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
-let reportes = JSON.parse(localStorage.getItem('omni_reportes')||'[]');
+let reportes = JSON.parse(localStorage.getItem('omni_resumenes')||'[]');
 let activeId = null;
-const saveLocal = () => localStorage.setItem('omni_reportes', JSON.stringify(reportes));
+const saveLocal = () => localStorage.setItem('omni_resumenes', JSON.stringify(reportes));
 const imgCache = {}; // url → base64, populated when images render in view
 
 // ═══════════════════════════════════
@@ -799,7 +765,7 @@ async function fbLoad(){
   if(!window._fe) return;
   try{
     const{collection,getDocs,query,orderBy}=window._ff;
-    const q=query(collection(window._db,'reportes'),orderBy('createdAt','desc'));
+    const q=query(collection(window._db,'resumenes'),orderBy('createdAt','desc'));
     const s=await getDocs(q);
     reportes=[];s.forEach(d=>reportes.push({id:d.id,...d.data()}));
     saveLocal();
@@ -812,17 +778,17 @@ async function fbAdd(data){
   if(!window._fe) return null;
   try{
     const{collection,addDoc}=window._ff;
-    const r=await addDoc(collection(window._db,'reportes'),{...data,createdAt:new Date().toISOString()});
+    const r=await addDoc(collection(window._db,'resumenes'),{...data,createdAt:new Date().toISOString()});
     return r.id;
   }catch(e){ return null; }
 }
 async function fbUp(id,data){
   if(!window._fe||!id||id.startsWith('loc_')) return;
-  try{ const{doc,updateDoc}=window._ff; await updateDoc(doc(window._db,'reportes',id),data); }catch(e){}
+  try{ const{doc,updateDoc}=window._ff; await updateDoc(doc(window._db,'resumenes',id),data); }catch(e){}
 }
 async function fbDel(id){
   if(!window._fe||!id||id.startsWith('loc_')) return;
-  try{ const{doc,deleteDoc}=window._ff; await deleteDoc(doc(window._db,'reportes',id)); }catch(e){}
+  try{ const{doc,deleteDoc}=window._ff; await deleteDoc(doc(window._db,'resumenes',id)); }catch(e){}
 }
 async function uploadImage(file, reportId){
   if(!window._fe||!window._st) return null;
@@ -857,39 +823,16 @@ function renderSidebar(){
   buildAnioSel();
   const sA=document.getElementById('selAnio').value;
   const sM=document.getElementById('selMes').value;
-  const sAr=document.getElementById('selArea').value;
+  const sAr=''; // No area filter in resumen
 
-  // Rebuild month options — pre-select current month if no previous selection
-  const now = new Date();
-  const curYM = `${now.getFullYear()}-${now.getMonth()+1}`;
-  const usedYM=[...new Set(reportes.map(r=>r.anio&&r.mes?`${r.anio}-${MONTHS.indexOf(r.mes)+1}`:null).filter(Boolean))].sort().reverse();
-  const mSel=document.getElementById('selMes');
-  const mPrev=mSel.value;
-  const isFirstRender = !mSel.dataset.init;
-  mSel.innerHTML='<option value="">Todos los meses</option>';
-  usedYM.forEach(ym=>{
-    const[y,m]=ym.split('-');
-    if(sA&&y!==sA) return;
-    const o=document.createElement('option');
-    o.value=`${y}-${m}`;o.textContent=`${MONTHS[parseInt(m)-1]}`;
-    // Pre-select current month on first render, otherwise restore previous
-    const selectThis = isFirstRender ? o.value===curYM : o.value===mPrev;
-    if(selectThis)o.selected=true;
-    mSel.appendChild(o);
-  });
-  mSel.dataset.init='1';
+  // No month selector in resumen — show all months for selected year
 
   // Rebuild area filter
-  const areas=[...new Set(reportes.map(r=>r.area).filter(Boolean))].sort();
-  const arSel=document.getElementById('selArea');
-  const arPrev=arSel.value;
-  arSel.innerHTML='<option value="">Todas las áreas</option>';
-  areas.forEach(a=>{const o=document.createElement('option');o.value=a;o.textContent=a;if(a===arPrev)o.selected=true;arSel.appendChild(o);});
+  // No area selector in resumen
 
   let list=reportes.filter(r=>{
     if(sA&&String(r.anio)!==sA) return false;
-    if(sM){const[y,m]=sM.split('-');if(String(r.anio)!==y||r.mes!==MONTHS[parseInt(m)-1]) return false;}
-    if(sAr&&r.area!==sAr) return false;
+    // No month filter — all months shown
     return true;
   }).sort((a,b)=>{
     const da=`${a.anio}-${String(MONTHS.indexOf(a.mes)+1).padStart(2,'0')}`;
@@ -915,7 +858,7 @@ function renderSidebar(){
       d.className='ri'+(r.id===activeId?' active':'');
       d.onclick=(e)=>{if(e.target.closest('.ri-del'))return;activeId=r.id;document.querySelectorAll('.ri').forEach(x=>x.classList.remove('active'));d.classList.add('active');renderView(r.id);};
       d.innerHTML=`<div class="ri-body">
-        <div class="ri-title">${esc(r.area||'Sin área')} — ${esc(r.mes||'')} ${r.anio||''}</div>
+        <div class="ri-title">Resumen ${esc(r.mes||'')} ${r.anio||''}</div>
         <div class="ri-sub">
           ${r.autor?`<span>${esc(r.autor)}</span>`:''}
           ${r.modoLibre?`<span class="ri-tag">✏️ Libre</span>`:''}
@@ -1026,7 +969,7 @@ function switchTab(tab){
   document.getElementById('tab-libre').classList.toggle('active',       tab==='libre');
   document.getElementById('tab-diapositiva').classList.toggle('active', tab==='diapositiva');
   document.getElementById('tab-word').classList.toggle('active',        tab==='word');
-  if(tab==='diapositiva') pptInlineUpdateUI();
+  if(tab==='diapositiva'){ pptInlineUpdateUI(); pptAreaChange(); }
   if(tab==='word') wUpdateUI();
 }
 
@@ -1257,11 +1200,11 @@ function renderView(id){
   p.innerHTML=`<div class="view">
     <div class="view-hdr">
       <div>
-        <div class="view-title">Reporte Mensual — ${esc(r.area||'')} ${esc(r.mes||'')} ${r.anio||''}</div>
+        <div class="view-title">Resumen General — ${esc(r.mes||'')} ${r.anio||''}</div>
         <div class="view-meta">
           📅 ${esc(r.mes||'')} ${r.anio||''}
           ${r.autor?`<span>👤 ${esc(r.autor)}</span>`:''}
-          <span class="view-badge">${esc(r.area||'')}</span>
+          <span class="view-badge">DIRECCIÓN</span>
         </div>
       </div>
       <div class="view-acts">
@@ -1383,9 +1326,9 @@ function populateYearSel(selId, defaultYear){
 // ═══════════════════════════════════
 function openModal(id=null){
   const r=id?reportes.find(x=>x.id===id):null;
-  document.getElementById('mTitle').textContent=r?'Editar Reporte':'Nuevo Reporte';
+  document.getElementById('mTitle').textContent=r?'Editar Resumen':'Nuevo Resumen';
   document.getElementById('mId').value=r?r.id:'';
-  document.getElementById('mArea').value=r?(r.area||''):'';
+  document.getElementById('mArea').value=r?(r.area||'DIRECCIÓN'):'DIRECCIÓN';
   document.getElementById('mMes').value=r?(r.mes||''):MONTHS[new Date().getMonth()];
   populateYearSel('mAnio', r?r.anio:null);
   if(r && r.anio) document.getElementById('mAnio').value = r.anio;
@@ -1429,7 +1372,7 @@ function openModal(id=null){
   }
   document.getElementById('uploadProgress').style.display='none';
   document.getElementById('bdModal').classList.add('open');
-  setTimeout(()=>document.getElementById('mArea').focus(),80);
+
 }
 function closeModal(){ document.getElementById('bdModal').classList.remove('open'); pendingImages={}; customSections=[]; }
 function arResize(el){el.style.height='auto';el.style.height=el.scrollHeight+'px';}
@@ -1438,7 +1381,7 @@ function arResize(el){el.style.height='auto';el.style.height=el.scrollHeight+'px
 //  SAVE
 // ═══════════════════════════════════
 async function saveReporte(){
-  const area=document.getElementById('mArea').value;
+  const area='DIRECCIÓN';
   const mes=document.getElementById('mMes').value;
   const anio=parseInt(document.getElementById('mAnio').value);
   if(!area||!mes||!anio){toast('Área, mes y año son obligatorios','error');return;}
@@ -1534,7 +1477,7 @@ async function saveReporte(){
     if(idx!==-1) reportes[idx]={...reportes[idx],...data, presentaciones};
     await fbUp(editId,{...data, presentaciones});
     activeId=editId;
-    toast('Reporte actualizado ✓','success');
+    toast('Resumen actualizado ✓','success');
   } else {
     const tmp='loc_'+Date.now();
     const rec={id:tmp,...data, presentaciones, createdAt:new Date().toISOString()};
@@ -1542,7 +1485,7 @@ async function saveReporte(){
     if(fbId) rec.id=fbId;
     reportes.unshift(rec);
     activeId=rec.id;
-    toast('Reporte guardado ✓','success');
+    toast('Resumen guardado ✓','success');
   }
 
   pendingImages={};
@@ -1967,16 +1910,7 @@ function updateEtPreview(){
   }
   const AREA_COLORS={'CEDIS':'#c8f135','CREO':'#7fffd4','ATN':'#ffc76b','MKT':'#ff9de2','ALMACÉN':'#82cfff','SISTEMAS':'#c5a3ff','DEFAULT':'#888'};
   const getColor=name=>{const k=Object.keys(AREA_COLORS).find(k=>String(name).toUpperCase().includes(k));return k?AREA_COLORS[k]:AREA_COLORS.DEFAULT;};
-  const existing=new Set([...list.querySelectorAll('input[type=checkbox]')].filter(cb=>cb.checked).map(cb=>cb.value));
-  list.innerHTML=areas.map(area=>{
-    const checked=existing.size===0||existing.has(area)?'checked':'';
-    const color=getColor(area);
-    return `<label style="display:flex;align-items:center;gap:8px;padding:4px 2px;cursor:pointer;font-size:13px;color:var(--t1)">
-      <input type="checkbox" value="${area}" ${checked} onchange="refreshEtPreview()"
-        style="width:14px;height:14px;accent-color:var(--ac);cursor:pointer;flex-shrink:0">
-      <span style="width:8px;height:8px;border-radius:2px;background:${color};flex-shrink:0"></span>
-      ${area}</label>`;
-  }).join('');
+  // No area filter needed - resumen is always DIRECCIÓN
   refreshEtPreview();
 }
 
@@ -1984,13 +1918,11 @@ function refreshEtPreview(){
   const mes   = document.getElementById('etMes').value;
   const anioVal = document.getElementById('etAnio').value;
   const anio  = anioVal ? parseInt(anioVal) : null;
-  const checked = getCheckedAreas();
   const prev  = document.getElementById('etPreview');
-  if(!checked.size){ prev.style.display='none'; return; }
   const filtered = reportes.filter(r=>{
     if(anio && r.anio !== anio) return false;
     if(mes  && r.mes  !== mes)  return false;
-    return checked.has(r.area);
+    return true;
   });
   if(!filtered.length){ prev.style.display='none'; return; }
   const lines = filtered.map(r=>{
@@ -2024,12 +1956,10 @@ async function exportarTodos(){
   const mes   = document.getElementById('etMes').value;
   const anioVal = document.getElementById('etAnio').value;
   const anio  = anioVal ? parseInt(anioVal) : null;
-  const checked = getCheckedAreas();
-  if(!checked.size){ toast('Selecciona al menos un área','error'); return; }
   const filtered = reportes.filter(r=>{
     if(anio && r.anio !== anio) return false;
     if(mes  && r.mes  !== mes)  return false;
-    return checked.has(r.area);
+    return true;
   });
   if(!filtered.length){ toast('No hay reportes con estos filtros','error'); return; }
   closeExportarTodos();
@@ -2110,7 +2040,7 @@ async function handleDocx(file){
     document.getElementById('impStep2').style.display='flex';
     document.getElementById('impSaveBtn').style.display='';
     document.getElementById('impFileName').textContent = file.name;
-    document.getElementById('impArea').value = parsed.area||'';
+    document.getElementById('impArea').value = 'DIRECCIÓN';
     document.getElementById('impMes').value = parsed.mes||MONTHS[new Date().getMonth()];
     document.getElementById('impAnio').value = parsed.anio||new Date().getFullYear();
     document.getElementById('impAutor').value = parsed.autor||'';
@@ -2280,7 +2210,7 @@ async function extractDocxText(uint8){
 }
 
 async function saveImported(){
-  const area = document.getElementById('impArea').value;
+  const area = 'DIRECCIÓN';
   const mes  = document.getElementById('impMes').value;
   const anio = parseInt(document.getElementById('impAnio').value);
   if(!mes||!anio){toast('Mes y año son obligatorios','error');return;}
@@ -2342,7 +2272,7 @@ async function saveImported(){
   reportes.unshift(rec);activeId=rec.id;
   _impDocxFile = null;
   saveLocal();closeImport();renderSidebar();renderView(activeId);
-  toast('Reporte importado ✓','success');
+  toast('Resumen importado ✓','success');
 }
 
 // ═══════════════════════════════════
@@ -2502,6 +2432,8 @@ function openPptModal(){
   document.getElementById('pptDropOdFile').textContent = 'El archivo se guardará en Google Drive → carpeta Reportes Omnilife';
   pptSetOdProgress(null);
   gdUpdateUI();
+  _pptAreaSel = 'DIRECCIÓN';
+  pptAreaChange();
   document.getElementById('bdPpt').classList.add('open');
 }
 function closePptModal(){ document.getElementById('bdPpt').classList.remove('open'); }
@@ -2509,10 +2441,10 @@ function closePptModal(){ document.getElementById('bdPpt').classList.remove('ope
 function pptMetaChange(){ pptAreaChange(); }
 
 function pptAreaChange(){
-  const area  = document.getElementById('pptArea').value;
+  const area  = 'DIRECCIÓN';
   const mes   = document.getElementById('pptMes')?.value || MONTHS[new Date().getMonth()];
   const anio  = document.getElementById('pptAnio')?.value || new Date().getFullYear();
-  _pptAreaSel = area || null;
+  _pptAreaSel = 'DIRECCIÓN';
   _pptFile = null;
   document.getElementById('pptUploadBtn').style.display = 'none';
   const drop = document.getElementById('pptDropOd');
@@ -2685,7 +2617,7 @@ async function pptDoUpload(){
         createdAt: new Date().toISOString(),
         highlights: [], kpis: [], imagenes: [], comentarios: ''
       };
-      const docRef = await addDoc(collection(window._db,'reportes'), newReporte);
+      const docRef = await addDoc(collection(window._db,'resumenes'), newReporte);
       r = {id: docRef.id, ...newReporte};
       reportes.unshift(r);
       saveLocal();
